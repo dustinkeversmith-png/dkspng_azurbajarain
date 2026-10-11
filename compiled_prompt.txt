@@ -1,0 +1,280 @@
+clear the check point reseed the initial weights
+1. if the result is rejected is it not commited to the rolling history?
+2. can we try a 50 term run to try and converge?
+
+### 1. Allowing Variant / Dynamic Step Sizes
+
+Allowing the agent to choose its own step size is viable. In classic optimization (e.g., adaptive gradient methods or $(1 + 1)$-evolution strategies), step size scales with uncertainty: **take larger exploratory steps when loss is flat or far from the objective, and contract step sizes when honing in on a minimum.**
+
+#### How Step Size Was Hardcoded vs. Dynamic
+
+In the TOTR formulation:
+
+
+$$W = (A \cdot B^T) \cdot \gamma^2$$
+
+* **$\gamma$ (gamma)** is your **global scale/step-size factor**.
+* **Vectors $A$ and $B$** represent the **directional unit vectors** (eigen-directions).
+* **$\Delta A, \Delta B$** represent the **perturbation radius**.
+
+The previous prompts forced a rigid bracket (e.g., *"keep gamma between 0.05 and 0.40"*). When the model picked $\gamma = 0.35$ with vectors near $80$, the effective weights scaled quadratically to $\sim 800$, causing the forward pass to blow up into millions on a linear output layer.
+
+#### Giving the Agent Control Over Step Sizes
+
+Expose a dedicated parameter called `step_scale` (or `exploration_radius`), allowing the agent to evaluate the rolling journal and choose its step size:
+
+```python
+# In orchestrators/loop_optimizer.py -> activity_llm_synthesize prompt:
+prompt = f"""You are an adaptive black-box parameter optimizer.
+Previous Evaluations (Rolling History):
+{history_table}
+
+Current Best Loss: {payload['loss']:.4f} (Max Residual: {payload['max_residual']:.4f})
+
+ADAPTIVE STEP CONTROL:
+1. Choose an exploration regime based on the loss trajectory:
+   - Coarse Step (Loss > 1.0 or plateaued): Set gamma in [0.08, 0.15], vector updates +/- 10-20.
+   - Fine Step (Loss dropping or < 0.6): Set gamma in [0.01, 0.05], vector updates +/- 2-5.
+2. Maintain stability: Do not choose gamma > 0.15 or vector entries > 40, as Layer 2 linear activations will explode.
+
+Emit strictly a JSON object:
+{
+  "exploration_regime": "coarse" | "fine",
+  "l1_w": "<totr_string>",
+  "l2_w": "<totr_string>",
+  "l1_b": "<floats>",
+  "l2_b": "<floats>"
+}
+"""
+
+```
+
+---
+
+### 2. Breakdown of Where the Tokens Were Spent
+
+Looking at your monitor dashboard across the run progression:
+
+* **Initial State:** 14 requests $\to$ **50.81K tokens** (Avg 3,630/request)
+* **Turn 2 State:** 17 requests $\to$ **58.52K tokens** ($+7.71\text{K}$ tokens for 3 calls)
+* **Final State (5-Trial Loop):** 32 requests $\to$ **84.39K tokens** ($+25.87\text{K}$ tokens for 15 internal calls)
+
+
+
+On average, each request consumed **~1,757 input tokens** and **~766 output tokens**:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Total Billed per Interaction: ~2,523 Tokens                            │
+├────────────────────────────────────────────────────────────────────────┤
+│ 1. Static Framework Envelopes (FastAPI / Azure Functions Agents):      │
+│    • Internal base system prompt, roles, and safety preambles:  ~750 t │
+│    • JSON Schema specifications for all registered host tools:  ~850 t │
+│ 2. Agent Markdown System Prompt:                                       │
+│    • GenerativeTuner.agent.md rules, formatting, grammar:       ~350 t │
+│ 3. Rolling History Payload:                                            │
+│    • FIFO sliding journal entries & current checkpoint URI:      ~60 t │
+│ 4. TOTR Parameters (The Actual Network State):                         │
+│    • l1_w, l2_w, l1_b, l2_b tokens:                             ~55 t  │
+│ 5. Generation Output:                                                  │
+│    • Synthesized candidate vectors, reasoning, JSON fields:    ~458 t  │
+└────────────────────────────────────────────────────────────────────────┘
+
+```
+
+#### Why the Total Ballooned Over 5 Trials:
+
+1. **The Multiplier Effect:** In the built-in Azure Functions agent pattern, each trial is not a single prompt call. It executes a multi-step exchange:
+
+$$\text{Trial 1} = \text{Read Tool Call} \to \text{Tool Result Return} \to \text{Commit Tool Call} \to \text{Commit Receipt Return}$$
+
+
+
+Every single transition re-submits the entire 1,950-token system context and tool schema definition.
+
+$$1,950 \text{ input tokens} \times 3 \text{ round trips per trial} \times 5 \text{ trials} \approx \mathbf{29,250 \text{ tokens}}$$
+
+
+2. **The Vector Strings Accounted for Less than 3%:** The TOTR SVD string tokens (`r:1|g:...|A:...|B:...`) accounted for only **~55 tokens per turn**. The remaining **97% of your bill was infrastructure overhead** from Azure's tool-calling definitions and system prompt wrapping.
+
+
+
+---
+
+### 3. Summary
+
+* **Adaptive Step Sizing:** You can make step sizes variable by allowing the agent to tune $\gamma$ (global scale) and $\Delta$ (vector integer delta) based on whether the loss trajectory is flattening or descending. Keep a hard ceiling on $\gamma \le 0.15$ in C++ to prevent linear layer explosion.
+* **Token Efficiency:** The low-rank TOTR vectors performed as expected (~55 tokens). The cost accumulated because Azure Functions Agents re-evaluates the static system prompt and tool definitions on every round trip of the loop. Using direct structured completion inside a single Durable Function activity bypasses those tool schemas, reducing per-iteration costs to ~250 tokens.
+
+
+### 1. Why the Static System Prompt Injects on Every Loop
+
+The token accumulation occurs because the standard **Azure Functions Agents `/chat` runtime** (and ReAct frameworks in general) treats tool calling as a conversational back-and-forth:
+
+1. **Repetitive Tool Injections:** On every single turn, the runtime re-serializes the entire agent markdown file (`.agent.md`) plus the OpenAPI/JSON-RPC schemas for all registered tools.
+
+
+2. **Context Compounding:** When an agent runs through `read` $\to$ `reason` $\to$ `commit`, the runtime re-submits the initial system instructions, tool definitions, and prior step history on every intermediate model call.
+
+
+3. **The Built-in Framework Overhead:** The framework wraps system text with safety disclaimers, chat roles, and conversational schema formatting that consume 1,500–2,000 baseline tokens before the model sees a single weight.
+
+
+
+---
+
+### 2. Method 1: The Zero-Schema Bypassing Pattern (Durable Orchestration)
+
+To avoid paying for the static system prompt and tool definitions on every iteration, you can **bypass the `/chat` agent harness entirely** using the **Durable Functions Orchestrator**.
+
+Instead of treating the LLM as a tool-calling chat bot that needs JSON schemas, treat it as a **stateless numerical function predictor** inside a Durable Activity task:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Durable Functions Orchestrator (loop_optimizer.py)[cite: 1]           │
+│                                                                        │
+│  while (iteration < MAX_TRIALS && loss > TARGET_LOSS):                 │
+│    │                                                                   │
+│    ├── 1. Activity: C++ reads Azurite directly[cite: 1]               │
+│    │      (Downloads SJC1 binary, outputs TOTR string + loss)[cite: 1]│
+│    │                                                                   │
+│    ├── 2. Activity: Direct LLM Completion[cite: 1]                    │
+│    │      • NO Tool Schemas (tools=None)[cite: 15]                    │
+│    │      • NO Conversational Agent Envelope[cite: 1, 15]             │
+│    │      • NO Chat History[cite: 1, 15]                              │
+│    │      • Prompt: 80 tokens (Journal history + active TOTR)          │
+│    │      • Output: 40 tokens (New TOTR string)                        │
+│    │                                                                   │
+│    └── 3. Activity: C++ commits and gates Azurite update[cite: 1]     │
+│           (Returns {loss, status} to the orchestrator)[cite: 1]       │
+└────────────────────────────────────────────────────────────────────────┘
+
+```
+
+#### The Activity Implementation (`orchestrators/loop_optimizer.py`)
+
+In the LLM activity, invoke `client.chat.completions.create` directly with `tools=None` and `response_format={"type": "json_object"}`:
+
+```python
+@bp.activity_trigger(input_name="payload")
+def activity_llm_synthesize(payload: dict):
+    from openai import AzureOpenAI
+    import os, json
+
+    client = AzureOpenAI(
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_version="2024-02-01",
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+    )
+
+    # Completely stripped prompt: ~90 tokens total, ZERO tools attached
+    minimal_prompt = f"""Task: Predict new TOTR weights to reduce loss.
+History:
+{payload['history_summary']}
+Current Best: loss={payload['loss']:.4f}, max_res={payload['max_residual']:.4f}
+Active:
+l1_w: "{payload['l1_w']}"
+l2_w: "{payload['l2_w']}"
+l1_b: "{payload['l1_b']}"
+l2_b: "{payload['l2_b']}"
+
+Rules:
+- Keep gamma in [0.02, 0.12]. Keep vector ints in [-30, 30].
+- Perturb active vectors to push loss lower.
+Emit strictly JSON: {{"l1_w":"...", "l2_w":"...", "l1_b":"...", "l2_b":"..."}}"""
+
+    response = client.chat.completions.create(
+        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-mini"),
+        messages=[{"role": "user", "content": minimal_prompt}],
+        response_format={"type": "json_object"},
+        temperature=0.3
+    )
+    return json.loads(response.choices[0].message.content)
+
+```
+
+**Token Savings:**
+
+* Old `/chat` Turn: System Prompt (1,200) + Tool Schemas (850) + Context (500) = **~2,550 tokens per step**.
+* Direct Activity Turn: Minimal Prompt (90) + Response (45) = **~135 tokens per step** (a 94% reduction).
+
+---
+
+### 3. Method 2: System Prompt Compression (When Staying in `.agent.md`)
+
+If you want to keep the built-in HTTP `/chat` endpoint (`GenerativeTuner.agent.md`), you can strip down the markdown system file to reduce static footprint:
+
+#### A. The Ultra-Lean `.agent.md`
+
+Remove verbose parameter grammars, redundant rule disclaimers, and architectural explanations:
+
+```markdown
+---
+name: GenerativeTuner
+description: TOTR neural weight optimizer
+builtin_endpoints: true
+workflows:
+  enabled: true
+---
+Role: Neural weight optimizer using TOTR format: `r:1|g:<gamma>|A:<row_ints>|B:<col_ints>`.
+
+Workflow:
+1. Call `read_totr_state_native({"checkpoint_blob":"sliding_totr.json","journal_blob":"sliding_journal.json"})`
+2. Analyze previous loss/metrics and synthesize an improved candidate:
+   - Gamma in [0.02, 0.12]. Vector integers non-zero in [-30, 30].
+3. Call `commit_winner_native` ONCE with {l1_w, l2_w, l1_b, l2_b, target_blob:"sliding_totr.json", journal_blob:"sliding_journal.json"}.
+
+```
+
+#### B. Truncate Tool Docstrings in Python (`tools/agents/native_storage_tools.py`)
+
+Azure Functions inspects Python docstrings and type annotations to generate tool schemas. Replace long explanatory docstrings with terse descriptions:
+
+```python
+class NativeStorageTools:
+    HOST_TOOLS = (
+        ("read_totr_state_native", "Read state. Pass checkpoint_blob, journal_blob."),
+        ("commit_winner_native", "Commit candidate. Pass l1_w, l2_w, l1_b, l2_b, target_blob, journal_blob."),
+    )
+
+    def read_totr_state_native(self, args: dict | str) -> dict:
+        """Read state."""
+        # ... logic
+        
+    def commit_winner_native(self, args: dict | str) -> dict:
+        """Commit candidate."""
+        # ... logic
+
+```
+
+---
+
+### 4. Method 3: Prompt Caching (Prefix Optimization)
+
+In Azure OpenAI and OpenAI deployments, **automatic prompt caching** activates when the prefix of the prompt exceeds 1,024 tokens and remains identical across requests.
+
+To optimize caching when using the agent loop:
+
+1. **Never inject dynamic data into the system prompt:** Keep the system prompt 100% static so it hits the cache across turns.
+2. **Push rolling history into the user message:** Place dynamic values (`current_loss`, `history`, `active_tokens`) strictly at the tail of the payload:
+```json
+{
+  "prompt": "Evaluate checkpoint sliding_totr.json. Current best loss is 0.5913. Propose update."
+}
+
+```
+
+
+3. When cached, prompt tokens are billed at a **50% to 80% discount**, reducing cost even when the framework re-submits the wrapper.
+
+---
+
+### Recommendation
+
+For true autonomous multi-trial loops, **Method 1 (Durable Activity Completion)** provides the highest efficiency:
+
+* Tool schemas and static system envelopes are completely eliminated from the prompt.
+
+
+* The LLM prompt scales with the data it consumes (~90 tokens of TOTR vectors and journal summaries).
+* The orchestrator manages loop sequencing and termination, while C++ gates Azurite checkpoints on local loopback sockets.

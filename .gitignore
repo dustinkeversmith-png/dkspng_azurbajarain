@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.python_packages/
+native/build/
+build/
+native/*.def
+native/libpython*.a
+tools/*.pyd
+tools/*.pyd.stale
+tools/*.so
+local.settings.json
+.azurite/
+docs
+
+docs/scratch/

@@ -1,0 +1,7 @@
+.git
+native/build
+.azurite
+**/__pycache__
+**/*.pyd
+tests
+.venv

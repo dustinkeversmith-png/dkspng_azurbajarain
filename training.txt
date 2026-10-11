@@ -1,0 +1,428 @@
+### 1. Why Weights Did Not Change on the First Call (And Why It Failed Twice)
+
+In your sweep logs (`tournament_completions.jsonl`), **Attempt 1 failed with an explicit error on both models**:
+
+> `Error: c1 changes 0 ints; need at least 2 and must not copy w`
+> 
+
+```json
+{"c1":{"w":"r:1|g:0.020|A:-99 -33 33 99|B:74 74 74 74","b":"0.1 0.1 0.1 0.1"}, ...}
+
+```
+
+* The active slice was `w:r:1|g:0.002|A:-99 -33 33 99|B:74 74 74 74`.
+
+
+* The model generated $c_1$ with the **exact same integer vectors** `A` and `B`, only changing the scale $\gamma$ from $0.002$ to $0.020$.
+
+
+* The parser asserted `integer_distance >= 2`, rejected the attempt, and triggered a retry prompt:
+
+
+> `Retry: c1 changes 0 ints; need at least 2 and must not copy w.`
+> 
+
+
+
+**Why the model did this:** Autoregressive language models naturally minimize edit distance when prompted with an active state and rigid format schemas. Without explicit instruction explaining *why* $c_1$ exists, the model assumes $c_1$ should be an anchored copy of the current state, using $c_2$ and $c_3$ for modifications.
+
+---
+
+### 2. Does the Model Actively Adjust the Learning Rate ($\gamma$) Based on Confidence?
+
+**No, not intentionally under the current prompt.**
+
+Currently, the model treats $\gamma$ as a static bracketed number:
+
+* In `dynamic_injector.py`, the prompt instructs:
+> `c1 gamma 0.02-0.035 ... c3 gamma 0.04-0.07`
+> 
+
+
+* In both sweep runs, the model assigned $\gamma$ sequentially based on the bracket bounds:
+* Attempt 2 for `mlp_regressor`: $c_1 = 0.020$, $c_2 = 0.030$, $c_3 = 0.050$
+
+* Attempt 2 for `bottleneck_ae`: $c_1 = 0.0025$, $c_2 = 0.0050$, $c_3 = 0.0070$
+
+
+
+
+The model is **not** evaluating its confidence or computing a line-search step size; it is simply picking numbers across the requested ranges.
+
+---
+
+### 3. Missing Directional Signals in the Prompt
+
+The current prompt provides gradient signs, but lacks context on how the model should interpret and use them:
+
+1. **Passive Gradient Notation:**
+`Grad A:[+ + + -] B:[+ + + +]` tells the model which way loss moved when coordinates were perturbed in C++, but does not state the mathematical relationship between the sign and directional descent.
+
+
+2. **Missing Trajectory Context in History:**
+The history line shows only: `H 2.00/0.40/rej, 1.40/-0.20/ok`. The model is told that a step was rejected or accepted, but is **not** told *what* vector changes caused the loss to drop. It cannot extrapolate a descent trajectory across trials.
+
+
+3. **No Staged Reasoning (Chain of Thought):**
+The prompt ends with:
+> `json only c1 c2 c3. Each is {"w": ..., "b": ...}`
+> 
+> 
+> The model must output the raw weights immediately. Without generating a rationale first, the weights are produced without intermediate deduction.
+> 
+> 
+
+
+
+---
+
+### 4. What to Update Before Running the Full Shootout
+
+To shift the model from unguided exploration toward deliberate convergence, implement four targeted updates:
+
+#### A. Enforce a "Reasoning Scratchpad" Before Generating Weights
+
+Allow the model 40–60 tokens to state its gradient analysis and step-size strategy before emitting candidates. Because autoregressive attention conditions on earlier tokens, this ensures the parameter updates follow a stated plan:
+
+```json
+{
+  "analysis": "Loss plateaued. Grad indicates positive updates along A[0..2] and B[0..3] will reduce error. Stepping gamma down to 0.025 to prevent overshooting.",
+  "c1": { "w": "...", "b": "..." },
+  "c2": { "w": "...", "b": "..." },
+  "c3": { "w": "...", "b": "..." }
+}
+
+```
+
+#### B. Provide Vector Deltas in the Rolling Memory Pool
+
+Expand the sliding history in `dynamic_injector.py` to record the direction of the winning update:
+
+* Instead of `H 1.40/-0.20/ok`, emit:
+`H T2 loss=1.40 delta=-0.20 winner=c2 step=gamma:0.030,A:[+2 +1 -1 +3]`
+This gives the model continuous velocity across trials.
+
+
+
+#### C. Clarify Gradient Signs in the Prompt
+
+Replace ambiguous shorthand with actionable guidance:
+
+* If `Grad A[i] == '+'`: *probed positive increased loss $\implies$ decrease this coordinate*.
+
+
+* If `Grad A[i] == '-'`: *probed positive decreased loss $\implies$ increase this coordinate*.
+
+
+* If `Grad A[i] == '0'`: *zero sensitivity (dead ReLU/saturation) $\implies$ increase bias to activate neuron*.
+
+
+
+#### D. Explicitly Differentiate Candidate Roles
+
+Prevent identical copying on Attempt 1 by giving each candidate a distinct operational goal:
+
+* **$c_1$ (Gradient Descent):** Shift vectors strictly opposite to `+` signs, step size $\gamma_{\min}$.
+
+
+* **$c_2$ (Adaptive Momentum):** Continue along the directional vector that won the previous trial, scaled by $\gamma_{\text{mid}}$.
+* **$c_3$ (Orthogonal Exploration):** Test an orthogonal directional perturbation on inactive (`0`) coordinates to escape saddle points.
+
+---
+
+### 5. Implementation Prompt for Grok / Cursor
+
+Copy and paste this prompt into Cursor to apply these updates to `dynamic_injector.py` and `modular_orchestrator.py` before running the shootout:
+
+```markdown
+# TASK: Add Diagnostic Reasoning, Step-Velocity History, and Directional Intent to Tournament Pipeline
+
+Update `orchestrators/dynamic_injector.py` and `orchestrators/modular_orchestrator.py` to eliminate zero-mutation first calls and replace blind guessing with gradient-informed candidate synthesis.
+
+---
+
+### 1. Update `dynamic_injector.py`
+
+#### A. Structured Generation with Reasoning Scratchpad
+Update the JSON response schema in `build_parameterized_slice_prompt`:
+```text
+json only. Schema:
+{
+  "reasoning": "<1-2 sentences diagnosing gradient hints and explaining chosen gamma>",
+  "c1": {"w": "...", "b": "..."},
+  "c2": {"w": "...", "b": "..."},
+  "c3": {"w": "...", "b": "..."}
+}
+
+```
+
+Update `parse_tournament` to parse the `c1`, `c2`, and `c3` blocks while logging the `reasoning` string.
+
+#### B. Directional Guidance Explanation
+
+Update the gradient prompt text:
+
+```text
+Grad hint interpretation:
+- '+' means positive perturbation increased loss -> decrease integer by 2 to 6
+- '-' means positive perturbation decreased loss -> increase integer by 2 to 6
+- '0' means dead/saturated coordinate -> adjust bias positive to reactivate ReLU
+
+```
+
+#### C. Candidate Roles (Eliminate Attempt-1 Duplication)
+
+State candidate purposes explicitly so $c_1$ is never copied verbatim:
+
+```text
+MANDATORY: All candidates must change at least 2 integers in A and B by at least 2 units.
+- c1 (Gradient Step): strictly follow gradient descent hints, conservative gamma.
+- c2 (Momentum Step): align with winning trajectory from previous step, moderate gamma.
+- c3 (Exploratory Probe): perturb zero-sensitivity coordinates or invert signs to jump basins, aggressive gamma.
+
+```
+
+#### D. Vector Velocity in History Window
+
+In `modular_orchestrator.py`, record the winning candidate's gamma and integer delta summary into `trials` (e.g., `winner_step: "g=0.030 d=8"`). In `build_parameterized_slice_prompt`, include this in the history line:
+
+```text
+H T1: loss=1.6961 delta=-0.0035 winner=c1 (g=0.020, d=8)
+
+```
+
+---
+
+### 2. Verify with Single-Slice Execution
+
+Run:
+
+```powershell
+python scripts/verify_modular_sweep.py
+
+```
+
+Verify that:
+
+1. Attempt 1 passes on the first try without triggering the `c1 changes 0 ints` retry error.
+2. The model outputs a `reasoning` trace demonstrating awareness of the gradient hints.
+3. Total token consumption remains within the 350–550 token window.
+
+```
+
+```
+
+
+### 1. Why Weights Did Not Change on the First Call (And Why It Failed Twice)
+
+In your sweep logs (`tournament_completions.jsonl`), **Attempt 1 failed with an explicit error on both models**:
+
+> `Error: c1 changes 0 ints; need at least 2 and must not copy w`
+> 
+
+```json
+{"c1":{"w":"r:1|g:0.020|A:-99 -33 33 99|B:74 74 74 74","b":"0.1 0.1 0.1 0.1"}, ...}
+
+```
+
+* The active slice was `w:r:1|g:0.002|A:-99 -33 33 99|B:74 74 74 74`.
+
+
+* The model generated $c_1$ with the **exact same integer vectors** `A` and `B`, only changing the scale $\gamma$ from $0.002$ to $0.020$.
+
+
+* The parser asserted `integer_distance >= 2`, rejected the attempt, and triggered a retry prompt:
+
+
+> `Retry: c1 changes 0 ints; need at least 2 and must not copy w.`
+> 
+
+
+
+**Why the model did this:** Autoregressive language models naturally minimize edit distance when prompted with an active state and rigid format schemas. Without explicit instruction explaining *why* $c_1$ exists, the model assumes $c_1$ should be an anchored copy of the current state, using $c_2$ and $c_3$ for modifications.
+
+---
+
+### 2. Does the Model Actively Adjust the Learning Rate ($\gamma$) Based on Confidence?
+
+**No, not intentionally under the current prompt.**
+
+Currently, the model treats $\gamma$ as a static bracketed number:
+
+* In `dynamic_injector.py`, the prompt instructs:
+> `c1 gamma 0.02-0.035 ... c3 gamma 0.04-0.07`
+> 
+
+
+* In both sweep runs, the model assigned $\gamma$ sequentially based on the bracket bounds:
+* Attempt 2 for `mlp_regressor`: $c_1 = 0.020$, $c_2 = 0.030$, $c_3 = 0.050$
+
+* Attempt 2 for `bottleneck_ae`: $c_1 = 0.0025$, $c_2 = 0.0050$, $c_3 = 0.0070$
+
+
+
+
+The model is **not** evaluating its confidence or computing a line-search step size; it is simply picking numbers across the requested ranges.
+
+---
+
+### 3. Missing Directional Signals in the Prompt
+
+The current prompt provides gradient signs, but lacks context on how the model should interpret and use them:
+
+1. **Passive Gradient Notation:**
+`Grad A:[+ + + -] B:[+ + + +]` tells the model which way loss moved when coordinates were perturbed in C++, but does not state the mathematical relationship between the sign and directional descent.
+
+
+2. **Missing Trajectory Context in History:**
+The history line shows only: `H 2.00/0.40/rej, 1.40/-0.20/ok`. The model is told that a step was rejected or accepted, but is **not** told *what* vector changes caused the loss to drop. It cannot extrapolate a descent trajectory across trials.
+
+
+3. **No Staged Reasoning (Chain of Thought):**
+The prompt ends with:
+> `json only c1 c2 c3. Each is {"w": ..., "b": ...}`
+> 
+> 
+> The model must output the raw weights immediately. Without generating a rationale first, the weights are produced without intermediate deduction.
+> 
+> 
+
+
+
+---
+
+### 4. What to Update Before Running the Full Shootout
+
+To shift the model from unguided exploration toward deliberate convergence, implement four targeted updates:
+
+#### A. Enforce a "Reasoning Scratchpad" Before Generating Weights
+
+Allow the model 40–60 tokens to state its gradient analysis and step-size strategy before emitting candidates. Because autoregressive attention conditions on earlier tokens, this ensures the parameter updates follow a stated plan:
+
+```json
+{
+  "analysis": "Loss plateaued. Grad indicates positive updates along A[0..2] and B[0..3] will reduce error. Stepping gamma down to 0.025 to prevent overshooting.",
+  "c1": { "w": "...", "b": "..." },
+  "c2": { "w": "...", "b": "..." },
+  "c3": { "w": "...", "b": "..." }
+}
+
+```
+
+#### B. Provide Vector Deltas in the Rolling Memory Pool
+
+Expand the sliding history in `dynamic_injector.py` to record the direction of the winning update:
+
+* Instead of `H 1.40/-0.20/ok`, emit:
+`H T2 loss=1.40 delta=-0.20 winner=c2 step=gamma:0.030,A:[+2 +1 -1 +3]`
+This gives the model continuous velocity across trials.
+
+
+
+#### C. Clarify Gradient Signs in the Prompt
+
+Replace ambiguous shorthand with actionable guidance:
+
+* If `Grad A[i] == '+'`: *probed positive increased loss $\implies$ decrease this coordinate*.
+
+
+* If `Grad A[i] == '-'`: *probed positive decreased loss $\implies$ increase this coordinate*.
+
+
+* If `Grad A[i] == '0'`: *zero sensitivity (dead ReLU/saturation) $\implies$ increase bias to activate neuron*.
+
+
+
+#### D. Explicitly Differentiate Candidate Roles
+
+Prevent identical copying on Attempt 1 by giving each candidate a distinct operational goal:
+
+* **$c_1$ (Gradient Descent):** Shift vectors strictly opposite to `+` signs, step size $\gamma_{\min}$.
+
+
+* **$c_2$ (Adaptive Momentum):** Continue along the directional vector that won the previous trial, scaled by $\gamma_{\text{mid}}$.
+* **$c_3$ (Orthogonal Exploration):** Test an orthogonal directional perturbation on inactive (`0`) coordinates to escape saddle points.
+
+---
+
+### 5. Implementation Prompt for Grok / Cursor
+
+Copy and paste this prompt into Cursor to apply these updates to `dynamic_injector.py` and `modular_orchestrator.py` before running the shootout:
+
+```markdown
+# TASK: Add Diagnostic Reasoning, Step-Velocity History, and Directional Intent to Tournament Pipeline
+
+Update `orchestrators/dynamic_injector.py` and `orchestrators/modular_orchestrator.py` to eliminate zero-mutation first calls and replace blind guessing with gradient-informed candidate synthesis.
+
+---
+
+### 1. Update `dynamic_injector.py`
+
+#### A. Structured Generation with Reasoning Scratchpad
+Update the JSON response schema in `build_parameterized_slice_prompt`:
+```text
+json only. Schema:
+{
+  "reasoning": "<1-2 sentences diagnosing gradient hints and explaining chosen gamma>",
+  "c1": {"w": "...", "b": "..."},
+  "c2": {"w": "...", "b": "..."},
+  "c3": {"w": "...", "b": "..."}
+}
+
+```
+
+Update `parse_tournament` to parse the `c1`, `c2`, and `c3` blocks while logging the `reasoning` string.
+
+#### B. Directional Guidance Explanation
+
+Update the gradient prompt text:
+
+```text
+Grad hint interpretation:
+- '+' means positive perturbation increased loss -> decrease integer by 2 to 6
+- '-' means positive perturbation decreased loss -> increase integer by 2 to 6
+- '0' means dead/saturated coordinate -> adjust bias positive to reactivate ReLU
+
+```
+
+#### C. Candidate Roles (Eliminate Attempt-1 Duplication)
+
+State candidate purposes explicitly so $c_1$ is never copied verbatim:
+
+```text
+MANDATORY: All candidates must change at least 2 integers in A and B by at least 2 units.
+- c1 (Gradient Step): strictly follow gradient descent hints, conservative gamma.
+- c2 (Momentum Step): align with winning trajectory from previous step, moderate gamma.
+- c3 (Exploratory Probe): perturb zero-sensitivity coordinates or invert signs to jump basins, aggressive gamma.
+
+```
+
+#### D. Vector Velocity in History Window
+
+In `modular_orchestrator.py`, record the winning candidate's gamma and integer delta summary into `trials` (e.g., `winner_step: "g=0.030 d=8"`). In `build_parameterized_slice_prompt`, include this in the history line:
+
+```text
+H T1: loss=1.6961 delta=-0.0035 winner=c1 (g=0.020, d=8)
+
+```
+
+---
+
+### 2. Verify with Single-Slice Execution
+
+Run:
+
+```powershell
+python scripts/verify_modular_sweep.py
+
+```
+
+Verify that:
+
+1. Attempt 1 passes on the first try without triggering the `c1 changes 0 ints` retry error.
+2. The model outputs a `reasoning` trace demonstrating awareness of the gradient hints.
+3. Total token consumption remains within the 350–550 token window.
+
+```
+
+```

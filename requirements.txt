@@ -1,0 +1,2 @@
+azurefunctions-agents-runtime>=0.1.0b16
+pybind11>=2.13
