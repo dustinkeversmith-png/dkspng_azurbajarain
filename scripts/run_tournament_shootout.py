@@ -1,8 +1,9 @@
-"""Ten-trial tournament shootout across four model and bound configurations.
+"""Ten-trial tournament of the regressor and the autoencoder.
 
 Starts the local Functions host when port 7071 is closed, seeds a fresh checkpoint
-per arm, and polls each orchestration to completion. Completions have no token cap.
+per model, and polls each orchestration to completion. Completions have no token cap.
 A trial is committed only when the three candidates change the slice.
+Gamma bands and journal fields come from the model.
 """
 
 from __future__ import annotations
@@ -29,32 +30,14 @@ ARM_TIMEOUT_S = 12 * 60
 
 ARMS: list[dict[str, Any]] = [
     {
-        "name": "MLP-Standard",
+        "name": "mlp_regressor",
         "factory": "MlpRegressor",
-        "gamma_min": 0.02,
-        "gamma_max": 0.07,
         "int_bound": 25,
     },
     {
-        "name": "MLP-Aggressive",
-        "factory": "MlpRegressor",
-        "gamma_min": 0.035,
-        "gamma_max": 0.080,
-        "int_bound": 25,
-    },
-    {
-        "name": "AE-Standard",
+        "name": "bottleneck_ae",
         "factory": "BottleneckAutoencoder",
-        "gamma_min": 0.02,
-        "gamma_max": 0.08,
         "int_bound": 25,
-    },
-    {
-        "name": "AE-TightBounds",
-        "factory": "BottleneckAutoencoder",
-        "gamma_min": 0.02,
-        "gamma_max": 0.08,
-        "int_bound": 15,
     },
 ]
 
@@ -187,17 +170,10 @@ def _run_arm(arm: dict[str, Any]) -> dict[str, Any]:
             "checkpoint_blob": checkpoint,
             "journal_blob": journal,
             "journal_capacity": 10,
-            "rolling_config": {
-                "visible_history_count": 3,
-                "tracked_metrics": ["loss", "status", "delta"],
-            },
+            "rolling_config": {"visible_history_count": 3},
             "training_params": {
                 "arm_name": arm["name"],
-                "gamma_min": arm["gamma_min"],
-                "gamma_max": arm["gamma_max"],
                 "int_bound": arm["int_bound"],
-                "target_sparsity": 0.20,
-                "exploration_mode": "tournament_triad",
             },
         },
     )
@@ -255,7 +231,7 @@ def _pct(initial: float, final: float) -> float:
 def _scoreboard(results: list[dict[str, Any]]) -> str:
     lines = [
         "========================================================================================",
-        "TOURNAMENT BENCHMARK SHOOTOUT RESULTS (10 TRIALS PER ARM)",
+        "TOURNAMENT RESULTS (10 TRIALS: mlp_regressor, bottleneck_ae)",
         "========================================================================================",
         f"{'Arm Name':<18} {'L_init':>8} {'L_final':>8} {'Delta L (%)':>16} {'Commits':>9} {'Diverged':>10} {'Win (c1/c2/c3)':>16} {'Avg Tokens':>12}",
         "----------------------------------------------------------------------------------------",

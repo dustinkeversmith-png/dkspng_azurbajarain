@@ -51,11 +51,15 @@ public:
         return render_checkpoint(model, model.checkpoint_document(score, checksum));
     }
 
+    static NeuralNetwork unpack(const std::string& bytes) {
+        return ArchitectureCatalog::prepare(stevejob::messaging::SJC1Compressor::instance().unpack(bytes));
+    }
+
     static LoadedCheckpoint open(const std::string& target_blob) {
         stevejob::storage::AzuriteClient client;
         const std::string bytes = client.download_blob("models", stevejob::storage::BlobPath::bare(target_blob, "models/"));
         LoadedCheckpoint loaded;
-        loaded.model = ArchitectureCatalog::prepare(stevejob::messaging::SJC1Compressor::instance().unpack(bytes));
+        loaded.model = unpack(bytes);
         loaded.checksum = client.sha256_hex16(bytes);
         return loaded;
     }

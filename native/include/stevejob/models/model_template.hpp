@@ -51,6 +51,11 @@ public:
     // 3. Gradient Probing as an Extensible Telemetry Option
     virtual core::DescribedField derive_gradient_probe(const std::string& slice_id) const = 0;
 
+    virtual bool probe_is_flat(const std::string& slice_id) const {
+        const std::string hint = derive_gradient_probe(slice_id).to_string();
+        return hint.find('+') == std::string::npos && hint.find('-') == std::string::npos;
+    }
+
     // 4. Decoupled Schemes
     virtual const messaging::IEncodingScheme& get_scheme_for_slice(const SliceRef& slice) const = 0;
     virtual const messaging::IEncodingScheme& get_bias_scheme(const SliceRef& slice) const = 0;

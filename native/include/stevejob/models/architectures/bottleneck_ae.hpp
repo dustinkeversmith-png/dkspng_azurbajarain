@@ -14,6 +14,118 @@ namespace stevejob::models {
 
 class BottleneckAutoencoder : public ModelTemplate {
 public:
+    class ScalarCodec : public messaging::IEncodingScheme {
+    public:
+        messaging::EncodingDescriptor get_descriptor() const override { return info_; }
+
+        std::string serialize_matrix(const std::vector<std::vector<double>>& matrix) const override {
+            if (matrix.size() != 1) {
+                throw std::invalid_argument(info_.scheme_name + " encodes one row");
+            }
+            return serialize_vector(matrix[0], 0, matrix[0].size());
+        }
+
+        std::vector<std::vector<double>> deserialize_matrix(const std::string& token, std::size_t rows, std::size_t cols) const override {
+            if (rows != 1) {
+                throw std::invalid_argument(info_.scheme_name + " decodes one row");
+            }
+            return {deserialize_vector(token, cols)};
+        }
+
+        std::string serialize_vector(const std::vector<double>& values, std::size_t start, std::size_t count) const override {
+            return messaging::TotrEngine::encode_vector(std::vector<double>(values.begin() + static_cast<std::ptrdiff_t>(start),
+                                                                            values.begin() + static_cast<std::ptrdiff_t>(start + count)));
+        }
+
+        std::vector<double> deserialize_vector(const std::string& text, std::size_t count) const override {
+            return messaging::TotrEngine::decode_vector(text, count);
+        }
+
+    protected:
+        explicit ScalarCodec(messaging::EncodingDescriptor info) : info_(std::move(info)) {}
+
+    private:
+        messaging::EncodingDescriptor info_;
+    };
+
+    class SparsityCodec : public ScalarCodec {
+    public:
+        static const SparsityCodec& instance() {
+            static const SparsityCodec scheme;
+            return scheme;
+        }
+
+    private:
+        SparsityCodec()
+            : ScalarCodec({"reconstruction_sparsity",
+                           "One decimal in [0, 1].",
+                           "sparsity = count(|w| < 0.05) / count(w).",
+                           "Read the decimal as a fraction of small autoencoder weights. Keep the encoder able to reach both latent units."}) {}
+    };
+
+    class LatentCodec : public ScalarCodec {
+    public:
+        static const LatentCodec& instance() {
+            static const LatentCodec scheme;
+            return scheme;
+        }
+
+    private:
+        LatentCodec()
+            : ScalarCodec({"latent_utilization",
+                           "One decimal in [0, 1].",
+                           "utilization = firing latent units / latent units on the reconstruction grid.",
+                           "Read the decimal as how much of the 2-wide code is alive. Near 0 means the bottleneck is unused."}) {}
+    };
+
+    struct ReconstructionJournalScheme {
+        storage::MetricField delta{"delta", storage::MetricType::Number, 0.0,
+                                   "Signed reconstruction-loss change against the last committed checkpoint."};
+        storage::MetricField winner{"winner", storage::MetricType::Text, std::string("seed"),
+                                    "Candidate name that scored the lowest finite reconstruction loss."};
+        storage::MetricField seeded{"status", storage::MetricType::Text, std::string("seed"),
+                                    "Trial result: seed, committed_natively, rejected, or rejected_divergent."};
+        storage::MetricField step{"winner_step", storage::MetricType::Token, std::string(""),
+                                  "Winning gamma and integer distance, written as g=<gamma> d=<distance>."};
+        storage::MetricField slice{"slice", storage::MetricType::Text, std::string(""), "Slice id this reconstruction trial edited."};
+
+        JournalConfig config() const {
+            JournalConfig journal;
+            journal.capacity = 5;
+            journal.task = "reconstruction";
+            journal.description =
+                "Sliding window of reconstruction trials. loss is the scored error. "
+                "A checkpoint write requires the loss to fall by more than 0.0001.";
+            return journal;
+        }
+
+        std::string prompt_text() const {
+            return "Journal scheme: task reconstruction. delta is a number and is the signed loss change. "
+                   "winner is text and names the candidate. status is text and is seed on the opening row.";
+        }
+
+        storage::JournalRecord open_record(const ModelEvaluation& score, const std::string& checksum) const {
+            storage::JournalRecord record;
+            record.loss = score.primary_loss;
+            record.checksum = checksum;
+            storage::MetricFields::append_score(record, score);
+            record.metrics.push_back(delta);
+            record.metrics.push_back(winner);
+            record.metrics.push_back(seeded);
+            return record;
+        }
+
+        storage::MetricField with_number(storage::MetricField field, double value) const {
+            field.value = value;
+            return field;
+        }
+
+        storage::MetricField with_text(storage::MetricField field, const std::string& value) const {
+            field.value = value;
+            return field;
+        }
+    };
+
     BottleneckAutoencoder() : net_("BottleneckAutoencoder") {
         net_.architecture = "bottleneck_ae";
         net_.add_layer("encode", 8, 2, ReLUActivation{})
@@ -113,7 +225,7 @@ public:
                  "telemetry",
                  "Fraction of autoencoder weights whose magnitude is below 0.05.",
                  "Keep the encoder able to reach both latent units. High sparsity is not a lower reconstruction loss."},
-             nullptr},
+             &SparsityCodec::instance()},
             {core::DescribedField{
                  "latent_utilization",
                  core::FieldType::Scalar,
@@ -121,7 +233,7 @@ public:
                  "telemetry",
                  "Fraction of bottleneck ReLU units that fire on the reconstruction grid.",
                  "Utilization near 0 means the 2-wide code is unused. Do not drive both latent units to zero."},
-             nullptr},
+             &LatentCodec::instance()},
         };
     }
 
@@ -168,31 +280,28 @@ public:
 
     const messaging::IContainerScheme& container_scheme() const override { return messaging::SJC1Compressor::instance(); }
 
+    JournalConfig journal_config() const override { return journal_scheme_.config(); }
+
+    std::string journal_scheme_text() const override { return journal_scheme_.prompt_text(); }
+
     storage::JournalRecord seed_record(const ModelEvaluation& score, const std::string& checksum) const override {
-        storage::JournalRecord record;
-        record.loss = score.primary_loss;
-        record.checksum = checksum;
-        storage::MetricFields::append_score(record, score);
-        record.metrics.push_back(storage::MetricFields::number("delta", 0.0));
-        record.metrics.push_back(storage::MetricFields::text("winner", "seed"));
-        record.metrics.push_back(storage::MetricFields::text("status", "seed"));
-        return record;
+        return journal_scheme_.open_record(score, checksum);
     }
 
     storage::JournalRecord trial_record(const TrialNote& note) const override {
         storage::JournalRecord record;
         record.loss = note.loss;
         record.checksum = note.checksum;
-        record.metrics.push_back(storage::MetricFields::number("delta", note.delta));
+        record.metrics.push_back(journal_scheme_.with_number(journal_scheme_.delta, note.delta));
         if (note.record_winner) {
-            record.metrics.push_back(storage::MetricFields::text("winner", note.winner));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.winner, note.winner));
         }
-        record.metrics.push_back(storage::MetricFields::text("status", note.status));
+        record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.seeded, note.status));
         if (note.record_step) {
-            record.metrics.push_back(storage::MetricFields::text("winner_step", note.winner_step, storage::MetricType::Token));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.step, note.winner_step));
         }
         if (note.record_slice) {
-            record.metrics.push_back(storage::MetricFields::text("slice", note.slice_id));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.slice, note.slice_id));
         }
         if (note.score != nullptr) {
             storage::MetricFields::append_score(record, *note.score);
@@ -236,6 +345,9 @@ public:
     }
 
 private:
+    NeuralNetwork net_;
+    ReconstructionJournalScheme journal_scheme_;
+
     class ReconstructionOutput : public messaging::IOutputScheme {
     public:
         static const ReconstructionOutput& instance() {
@@ -257,8 +369,6 @@ private:
             return unpack_rows(token, rows, cols);
         }
     };
-
-    NeuralNetwork net_;
 
     void install(NeuralNetwork& model) const {
         model.slices = slice_scheme();

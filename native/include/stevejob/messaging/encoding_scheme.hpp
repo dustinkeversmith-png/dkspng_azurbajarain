@@ -41,6 +41,25 @@ public:
         return "";
     }
 
+    virtual int token_distance(const std::string& candidate, const std::string& active) const {
+        (void)candidate;
+        (void)active;
+        throw std::invalid_argument(get_descriptor().scheme_name + " has no integer distance");
+    }
+
+    virtual std::string step_label(const std::string& token, const std::string& active) const {
+        (void)token;
+        (void)active;
+        return "";
+    }
+
+    virtual bool raised(const std::string& updated, const std::string& active, std::size_t count) const {
+        (void)updated;
+        (void)active;
+        (void)count;
+        return false;
+    }
+
     virtual std::string serialize_matrix(const std::vector<std::vector<double>>& matrix) const = 0;
     virtual std::vector<std::vector<double>> deserialize_matrix(const std::string& token, std::size_t rows, std::size_t cols) const = 0;
     virtual std::string serialize_vector(const std::vector<double>& vec, std::size_t start, std::size_t count) const = 0;
@@ -112,6 +131,30 @@ public:
         }
         const std::string token = pack_rank1(gamma, left_codes, right_codes);
         return AcceptedValue{token, {{"gamma", field_body(token, "g:")}}};
+    }
+
+    int token_distance(const std::string& candidate, const std::string& active) const override {
+        return TotrEngine::integer_distance(candidate, active);
+    }
+
+    std::string step_label(const std::string& token, const std::string& active) const override {
+        if (token.empty()) {
+            return "";
+        }
+        const std::size_t pos = token.find("g:");
+        std::string gamma = "?";
+        if (pos != std::string::npos) {
+            const std::size_t begin = pos + 2;
+            const std::size_t end = token.find('|', begin);
+            gamma = token.substr(begin, end == std::string::npos ? std::string::npos : end - begin);
+        }
+        int distance = 0;
+        try {
+            distance = token_distance(token, active);
+        } catch (const std::invalid_argument&) {
+            distance = 0;
+        }
+        return "g=" + gamma + " d=" + std::to_string(distance);
     }
 
 private:
@@ -275,6 +318,25 @@ public:
     std::vector<double> deserialize_vector(const std::string& text, std::size_t count) const override {
         return TotrEngine::decode_vector(text, count);
     }
+
+    bool raised(const std::string& updated, const std::string& active, std::size_t count) const override {
+        return values_raised(*this, updated, active, count);
+    }
+
+    static bool values_raised(const IEncodingScheme& scheme, const std::string& updated, const std::string& active, std::size_t count) {
+        try {
+            const std::vector<double> next = scheme.deserialize_vector(updated, count);
+            const std::vector<double> previous = scheme.deserialize_vector(active, count);
+            for (std::size_t index = 0; index < count; ++index) {
+                if (next.at(index) >= previous.at(index) + 0.15) {
+                    return true;
+                }
+            }
+        } catch (const std::invalid_argument&) {
+            return false;
+        }
+        return false;
+    }
 };
 
 class BiasDeltaScheme : public IEncodingScheme {
@@ -368,6 +430,10 @@ public:
             values.push_back(static_cast<double>(code) * 0.01);
         }
         return values;
+    }
+
+    bool raised(const std::string& updated, const std::string& active, std::size_t count) const override {
+        return BiasFloatScheme::values_raised(*this, updated, active, count);
     }
 };
 

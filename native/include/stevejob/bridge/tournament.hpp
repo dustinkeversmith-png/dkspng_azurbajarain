@@ -1,7 +1,5 @@
 #pragma once
 
-#include "stevejob/messaging/sjc1_scheme.hpp"
-#include "stevejob/messaging/totr_engine.hpp"
 #include "stevejob/models/architecture_catalog.hpp"
 #include "stevejob/models/model_checkpoint.hpp"
 #include "stevejob/storage/azurite_client.hpp"
@@ -36,8 +34,7 @@ public:
         const std::string stored_name = stevejob::storage::BlobPath::bare(target_blob, "models/");
         const std::string journal_name = stevejob::storage::BlobPath::bare(journal_blob, "evals/");
         const std::string current = client.download_blob("models", stored_name);
-        stevejob::models::NeuralNetwork baseline =
-            stevejob::models::ArchitectureCatalog::prepare(stevejob::messaging::SJC1Compressor::instance().unpack(current));
+        stevejob::models::NeuralNetwork baseline = stevejob::models::ModelCheckpoint::unpack(current);
         stevejob::storage::SlidingJournal journal(journal_capacity == 0 ? 1 : journal_capacity);
         stevejob::models::ModelCheckpoint::read_journal(client, journal_name, journal);
 
@@ -47,7 +44,9 @@ public:
         const stevejob::models::SliceRef active_slice = baseline.find_slice(slice_id);
         const std::string active_token = baseline.slice_token(active_slice);
         const std::string active_bias = baseline.slice_bias(active_slice);
-        const bool dead_probe = probe_is_dead(baseline, slice_id);
+        const bool dead_probe = stevejob::models::ArchitectureCatalog::visit(
+            stevejob::models::NeuralNetwork(baseline),
+            [&](auto& model) { return model.probe_is_flat(slice_id); });
         for (const TournamentCandidate& candidate : candidates) {
             board.consider(baseline, candidate, slice_id, active_token, active_bias, active_slice.cols, dead_probe);
         }
@@ -92,7 +91,9 @@ public:
         std::size_t bytes = 0;
         std::string checksum;
         if (kept) {
-            const std::string packed = stevejob::messaging::SJC1Compressor::instance().pack(candidate);
+            const std::string packed = stevejob::models::ArchitectureCatalog::visit(
+                stevejob::models::NeuralNetwork(candidate),
+                [&](auto& model) { return model.container_scheme().pack(model.network()); });
             client.upload_blob("models", stored_name, packed, "application/octet-stream");
             bytes = packed.size();
             checksum = client.sha256_hex16(packed);
@@ -150,9 +151,7 @@ public:
         const std::string journal_name = stevejob::storage::BlobPath::bare(journal_blob, "evals/");
         const std::string model_bytes = client.download_blob("models", stored_name);
         const std::string journal_text = client.download_blob("evals", journal_name);
-        stevejob::models::NeuralNetwork network =
-            stevejob::models::ArchitectureCatalog::prepare(
-                stevejob::messaging::SJC1Compressor::instance().unpack(model_bytes));
+        stevejob::models::NeuralNetwork network = stevejob::models::ModelCheckpoint::unpack(model_bytes);
         stevejob::storage::SlidingJournal journal(5);
         journal.deserialize(journal_text);
         if (journal.size() == 0) {
@@ -186,24 +185,17 @@ public:
         return result;
     }
 
-    static std::string winner_step(const std::string& token, const std::string& active) {
+    static std::string winner_step(const stevejob::models::NeuralNetwork& network,
+                                   const std::string& slice_id,
+                                   const std::string& token,
+                                   const std::string& active) {
         if (token.empty()) {
             return "";
         }
-        const std::size_t pos = token.find("g:");
-        std::string gamma = "?";
-        if (pos != std::string::npos) {
-            const std::size_t begin = pos + 2;
-            const std::size_t end = token.find('|', begin);
-            gamma = token.substr(begin, end == std::string::npos ? std::string::npos : end - begin);
-        }
-        int distance = 0;
-        try {
-            distance = stevejob::messaging::TotrEngine::integer_distance(token, active);
-        } catch (const std::invalid_argument&) {
-            distance = 0;
-        }
-        return "g=" + gamma + " d=" + std::to_string(distance);
+        return stevejob::models::ArchitectureCatalog::visit(stevejob::models::NeuralNetwork(network), [&](auto& model) {
+            const stevejob::models::SliceRef slice = model.network().find_slice(slice_id);
+            return model.get_scheme_for_slice(slice).step_label(token, active);
+        });
     }
 
 private:
@@ -236,14 +228,20 @@ private:
             py::dict row;
             row["name"] = candidate.name;
             int distance = 0;
+            bool raised = false;
             try {
-                distance = stevejob::messaging::TotrEngine::integer_distance(candidate.weights, active_token);
+                stevejob::models::ArchitectureCatalog::visit(stevejob::models::NeuralNetwork(baseline), [&](auto& model) {
+                    const stevejob::models::SliceRef slice = model.network().find_slice(slice_id);
+                    distance = model.get_scheme_for_slice(slice).token_distance(candidate.weights, active_token);
+                    raised = model.get_bias_scheme(slice).raised(candidate.bias, active_bias, bias_count);
+                    return 0;
+                });
             } catch (const std::invalid_argument&) {
                 mark_divergent(row, 0);
                 return;
             }
             row["distance"] = distance;
-            if (distance < 2 && !(dead_probe && bias_raised(candidate.bias, active_bias, bias_count))) {
+            if (distance < 2 && !(dead_probe && raised)) {
                 row["status"] = "rejected_zero_mutation";
                 any_zero = true;
                 report.append(row);
@@ -288,7 +286,9 @@ private:
             std::string checksum = client.sha256_hex16(current);
             const std::string status = outcome(kept);
             if (kept) {
-                const std::string packed = stevejob::messaging::SJC1Compressor::instance().pack(best_model);
+                const std::string packed = stevejob::models::ArchitectureCatalog::visit(
+                    stevejob::models::NeuralNetwork(best_model),
+                    [&](auto& model) { return model.container_scheme().pack(model.network()); });
                 client.upload_blob("models", stored_name, packed, "application/octet-stream");
                 checksum = client.sha256_hex16(packed);
             }
@@ -301,7 +301,7 @@ private:
             py::dict receipt;
             receipt["status"] = status;
             receipt["winner"] = winner;
-            receipt["winner_step"] = Tournament::winner_step(winner_token, active_token);
+            receipt["winner_step"] = Tournament::winner_step(best_model, slice_id, winner_token, active_token);
             receipt["loss"] = published_loss;
             receipt["delta"] = delta;
             receipt["checksum"] = checksum;
@@ -341,7 +341,7 @@ private:
             note.checksum = checksum;
             note.slice_id = slice_id;
             note.winner = winner;
-            note.winner_step = Tournament::winner_step(token, active_token);
+            note.winner_step = Tournament::winner_step(best_model, slice_id, token, active_token);
             note.record_winner = true;
             note.record_step = true;
             note.record_slice = true;
@@ -388,13 +388,6 @@ private:
         });
     }
 
-    static bool probe_is_dead(const stevejob::models::NeuralNetwork& network, const std::string& slice_id) {
-        const std::string hint = stevejob::models::ArchitectureCatalog::visit(
-            stevejob::models::NeuralNetwork(network),
-            [&](auto& model) { return model.derive_gradient_probe(slice_id).to_string(); });
-        return hint.find('+') == std::string::npos && hint.find('-') == std::string::npos;
-    }
-
     static Judgement judge(const stevejob::models::NeuralNetwork& baseline,
                            const std::string& slice_id,
                            const std::string& weights,
@@ -421,20 +414,6 @@ private:
         });
     }
 
-    static bool bias_raised(const std::string& updated, const std::string& active, std::size_t count) {
-        try {
-            const auto next = stevejob::messaging::BiasDeltaScheme::instance().deserialize_vector(updated, count);
-            const auto previous = stevejob::messaging::BiasDeltaScheme::instance().deserialize_vector(active, count);
-            for (std::size_t index = 0; index < count; ++index) {
-                if (next[index] >= previous[index] + 0.15) {
-                    return true;
-                }
-            }
-        } catch (const std::invalid_argument&) {
-            return false;
-        }
-        return false;
-    }
 };
 
 }  // namespace stevejob::bridge

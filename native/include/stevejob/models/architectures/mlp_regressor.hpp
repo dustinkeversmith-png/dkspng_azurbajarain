@@ -14,6 +14,133 @@ namespace stevejob::models {
 
 class MlpRegressor : public ModelTemplate {
 public:
+    class ScalarCodec : public messaging::IEncodingScheme {
+    public:
+        messaging::EncodingDescriptor get_descriptor() const override { return info_; }
+
+        std::string serialize_matrix(const std::vector<std::vector<double>>& matrix) const override {
+            if (matrix.size() != 1) {
+                throw std::invalid_argument(info_.scheme_name + " encodes one row");
+            }
+            return serialize_vector(matrix[0], 0, matrix[0].size());
+        }
+
+        std::vector<std::vector<double>> deserialize_matrix(const std::string& token, std::size_t rows, std::size_t cols) const override {
+            if (rows != 1) {
+                throw std::invalid_argument(info_.scheme_name + " decodes one row");
+            }
+            return {deserialize_vector(token, cols)};
+        }
+
+        std::string serialize_vector(const std::vector<double>& values, std::size_t start, std::size_t count) const override {
+            return messaging::TotrEngine::encode_vector(std::vector<double>(values.begin() + static_cast<std::ptrdiff_t>(start),
+                                                                            values.begin() + static_cast<std::ptrdiff_t>(start + count)));
+        }
+
+        std::vector<double> deserialize_vector(const std::string& text, std::size_t count) const override {
+            return messaging::TotrEngine::decode_vector(text, count);
+        }
+
+    protected:
+        explicit ScalarCodec(messaging::EncodingDescriptor info) : info_(std::move(info)) {}
+
+    private:
+        messaging::EncodingDescriptor info_;
+    };
+
+    class SparsityCodec : public ScalarCodec {
+    public:
+        static const SparsityCodec& instance() {
+            static const SparsityCodec scheme;
+            return scheme;
+        }
+
+    private:
+        SparsityCodec()
+            : ScalarCodec({"regression_sparsity",
+                           "One decimal in [0, 1].",
+                           "sparsity = count(|w| < 0.05) / count(w).",
+                           "Read the decimal as a fraction of small regression weights. It is not a TOTR token."}) {}
+    };
+
+    class VarianceCodec : public ScalarCodec {
+    public:
+        static const VarianceCodec& instance() {
+            static const VarianceCodec scheme;
+            return scheme;
+        }
+
+    private:
+        VarianceCodec()
+            : ScalarCodec({"regression_variance",
+                           "One finite decimal, the mean square.",
+                           "variance = sum(w * w) / count(w).",
+                           "Read the decimal as weight energy. A jump means the slice scale moved."}) {}
+    };
+
+    class ConditionCodec : public ScalarCodec {
+    public:
+        static const ConditionCodec& instance() {
+            static const ConditionCodec scheme;
+            return scheme;
+        }
+
+    private:
+        ConditionCodec()
+            : ScalarCodec({"regression_conditioning",
+                           "One finite ratio.",
+                           "conditioning = peak(|w|) / mean(|w|).",
+                           "A large ratio means a few weights dominate. Take small integer steps on those coordinates."}) {}
+    };
+
+    struct RegressorJournalScheme {
+        storage::MetricField delta{"delta", storage::MetricType::Number, 0.0,
+                                   "Signed loss change against the last committed regression checkpoint."};
+        storage::MetricField winner{"winner", storage::MetricType::Text, std::string("seed"),
+                                    "Candidate name that scored the lowest finite regression loss."};
+        storage::MetricField seeded{"status", storage::MetricType::Text, std::string("seed"),
+                                    "Trial result: seed, committed_natively, rejected, or rejected_divergent."};
+        storage::MetricField step{"winner_step", storage::MetricType::Token, std::string(""),
+                                  "Winning gamma and integer distance, written as g=<gamma> d=<distance>."};
+        storage::MetricField slice{"slice", storage::MetricType::Text, std::string(""), "Slice id this regression trial edited."};
+
+        JournalConfig config() const {
+            JournalConfig journal;
+            journal.capacity = 5;
+            journal.task = "regression";
+            journal.description =
+                "Sliding window of tournament trials. loss is the scored error. "
+                "A checkpoint write requires the loss to fall by more than 0.0001.";
+            return journal;
+        }
+
+        std::string prompt_text() const {
+            return "Journal scheme: task regression. delta is a number and is the signed loss change. "
+                   "winner is text and names the candidate. status is text and is seed on the opening row.";
+        }
+
+        storage::JournalRecord open_record(const ModelEvaluation& score, const std::string& checksum) const {
+            storage::JournalRecord record;
+            record.loss = score.primary_loss;
+            record.checksum = checksum;
+            storage::MetricFields::append_score(record, score);
+            record.metrics.push_back(delta);
+            record.metrics.push_back(winner);
+            record.metrics.push_back(seeded);
+            return record;
+        }
+
+        storage::MetricField with_number(storage::MetricField field, double value) const {
+            field.value = value;
+            return field;
+        }
+
+        storage::MetricField with_text(storage::MetricField field, const std::string& value) const {
+            field.value = value;
+            return field;
+        }
+    };
+
     MlpRegressor() : net_("MlpRegressor") {
         net_.architecture = "mlp_regressor";
         net_.add_layer("layer1", 4, 8, ReLUActivation{})
@@ -68,7 +195,7 @@ public:
                  "telemetry",
                  "Fraction of regression weights whose magnitude is below 0.05.",
                  "High sparsity is not a lower regression loss. Do not chase it with a large gamma."},
-             nullptr},
+             &SparsityCodec::instance()},
             {core::DescribedField{
                  "variance",
                  core::FieldType::Scalar,
@@ -76,7 +203,7 @@ public:
                  "telemetry",
                  "Mean square of the regression weights.",
                  "A jump means the slice scale moved. Stay inside the gamma band."},
-             nullptr},
+             &VarianceCodec::instance()},
             {core::DescribedField{
                  "conditioning",
                  core::FieldType::Scalar,
@@ -84,7 +211,7 @@ public:
                  "telemetry",
                  "Peak regression weight magnitude divided by the mean magnitude.",
                  "High conditioning means a few weights dominate the regression. Take small integer steps on those coordinates."},
-             nullptr},
+             &ConditionCodec::instance()},
         };
     }
 
@@ -154,31 +281,28 @@ public:
 
     const messaging::IContainerScheme& container_scheme() const override { return messaging::SJC1Compressor::instance(); }
 
+    JournalConfig journal_config() const override { return journal_scheme_.config(); }
+
+    std::string journal_scheme_text() const override { return journal_scheme_.prompt_text(); }
+
     storage::JournalRecord seed_record(const ModelEvaluation& score, const std::string& checksum) const override {
-        storage::JournalRecord record;
-        record.loss = score.primary_loss;
-        record.checksum = checksum;
-        storage::MetricFields::append_score(record, score);
-        record.metrics.push_back(storage::MetricFields::number("delta", 0.0));
-        record.metrics.push_back(storage::MetricFields::text("winner", "seed"));
-        record.metrics.push_back(storage::MetricFields::text("status", "seed"));
-        return record;
+        return journal_scheme_.open_record(score, checksum);
     }
 
     storage::JournalRecord trial_record(const TrialNote& note) const override {
         storage::JournalRecord record;
         record.loss = note.loss;
         record.checksum = note.checksum;
-        record.metrics.push_back(storage::MetricFields::number("delta", note.delta));
+        record.metrics.push_back(journal_scheme_.with_number(journal_scheme_.delta, note.delta));
         if (note.record_winner) {
-            record.metrics.push_back(storage::MetricFields::text("winner", note.winner));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.winner, note.winner));
         }
-        record.metrics.push_back(storage::MetricFields::text("status", note.status));
+        record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.seeded, note.status));
         if (note.record_step) {
-            record.metrics.push_back(storage::MetricFields::text("winner_step", note.winner_step, storage::MetricType::Token));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.step, note.winner_step));
         }
         if (note.record_slice) {
-            record.metrics.push_back(storage::MetricFields::text("slice", note.slice_id));
+            record.metrics.push_back(journal_scheme_.with_text(journal_scheme_.slice, note.slice_id));
         }
         if (note.score != nullptr) {
             storage::MetricFields::append_score(record, *note.score);
@@ -194,6 +318,9 @@ public:
     }
 
 private:
+    NeuralNetwork net_;
+    RegressorJournalScheme journal_scheme_;
+
     class RegressorOutput : public messaging::IOutputScheme {
     public:
         static const RegressorOutput& instance() {
@@ -215,8 +342,6 @@ private:
             return unpack_rows(token, rows, cols);
         }
     };
-
-    NeuralNetwork net_;
 
     int resolve_samples(int sample_count) const {
         const int count = sample_count < 1 ? eval_scheme().samples : sample_count;
