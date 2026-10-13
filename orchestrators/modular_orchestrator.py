@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import os
-import re
 from typing import Any
 
 import azure.durable_functions as df
 
-from orchestrators.dynamic_injector import collect_tournament, integer_distance
 from orchestrators.loop_optimizer import bp
 from orchestrators.run_report import append_attempt, publish_report
+from orchestrators.tournament_evaluator import TournamentParseError, completion_context, extract_tournament
 
 
 def _plain(value: Any) -> Any:
@@ -31,14 +30,8 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
     checkpoint_blob = incoming.get("checkpoint_blob", "target_model.json")
     journal_blob = incoming.get("journal_blob", "target_journal.json")
     journal_capacity = int(incoming.get("journal_capacity", 10))
-    rolling_config = incoming.get("rolling_config") or {
-        "visible_history_count": 4,
-        "tracked_metrics": ["loss", "delta", "status"],
-    }
-    training_params = incoming.get("training_params") or {
-        "target_sparsity": 0.20,
-        "exploration_mode": "tournament_triad",
-    }
+    rolling_config = incoming.get("rolling_config") or {"visible_history_count": 4}
+    training_params = incoming.get("training_params") or {}
     meta = yield context.call_activity(
         "activity_gateway_read_meta",
         {"checkpoint_blob": checkpoint_blob, "journal_blob": journal_blob},
@@ -59,35 +52,57 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
             },
         )
         current_loss = float(slice_state.get("loss", best_loss))
-        synthesized = yield context.call_activity(
-            "activity_gateway_synthesize",
-            {
-                "layer_name": active_layer,
-                "in_dim": slice_state["in_dim"],
-                "out_dim": slice_state["out_dim"],
-                "active_w": slice_state["totr_w"],
-                "active_b": slice_state["biases"],
-                "current_loss": current_loss,
-                "max_residual": slice_state.get("max_residual", 0.0),
-                "directives": slice_state.get("directives") or meta.get("directives") or {},
-                "telemetry": slice_state.get("telemetry") or {},
-                "gradient_hint": slice_state.get("gradient_hint", ""),
-                "rolling_config": rolling_config,
-                "training_params": training_params,
-                "history": trials[-int(rolling_config.get("visible_history_count", 4)) :],
-            },
-        )
-        if isinstance(synthesized, dict) and "candidates" in synthesized:
+        reader = completion_context(slice_state)
+        note = ""
+        synthesized: dict[str, Any] = {}
+        receipt: dict[str, Any] = {}
+        candidates: list[dict[str, Any]] = []
+        prompt_tokens = completion_tokens = total_tokens = 0
+        accepted = False
+        for _attempt in range(3):
+            compiled = yield context.call_activity(
+                "activity_gateway_compile_prompt",
+                {
+                    "checkpoint_blob": checkpoint_blob,
+                    "journal_blob": journal_blob,
+                    "layer_name": active_layer,
+                    "visible_history": int(rolling_config.get("visible_history_count", 3)),
+                    "int_bound": int(training_params.get("int_bound", 25)),
+                    "retry_note": note,
+                },
+            )
+            synthesized = yield context.call_activity(
+                "activity_gateway_synthesize",
+                {
+                    "prompt": compiled.get("prompt", ""),
+                    "attempt": _attempt + 1,
+                    "layer_name": active_layer,
+                    "context": reader,
+                },
+            )
+            prompt_tokens += int(synthesized.get("prompt_tokens") or 0)
+            completion_tokens += int(synthesized.get("completion_tokens") or 0)
+            total_tokens += int(synthesized.get("total_tokens") or 0)
             candidates = synthesized.get("candidates") or []
-            prompt_tokens = int(synthesized.get("prompt_tokens") or 0)
-            completion_tokens = int(synthesized.get("completion_tokens") or 0)
-            total_tokens = int(synthesized.get("total_tokens") or 0)
-            mutation_failed = bool(synthesized.get("mutation_failed"))
-        else:
-            candidates = synthesized
-            prompt_tokens = completion_tokens = total_tokens = 0
-            mutation_failed = False
-        if mutation_failed or not candidates:
+            if synthesized.get("mutation_failed") or not candidates:
+                note = str(synthesized.get("error") or "completion did not contain three candidates")
+                continue
+            receipt = yield context.call_activity(
+                "activity_gateway_commit_tournament",
+                {
+                    "layer_name": active_layer,
+                    "candidates": candidates,
+                    "target_blob": checkpoint_blob,
+                    "journal_blob": journal_blob,
+                    "journal_capacity": journal_capacity,
+                },
+            )
+            if receipt.get("status") == "rejected_zero_mutation":
+                note = "candidates did not mutate the active slice"
+                continue
+            accepted = True
+            break
+        if not accepted:
             trial += 1
             trials.append(
                 {
@@ -98,7 +113,7 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
                     "status": "mutation_failed",
                     "winner": "",
                     "winner_step": "",
-                    "gradient_hint": slice_state.get("gradient_hint", ""),
+                    "probe": reader["probe"],
                     "reasoning": str(synthesized.get("reasoning") or "") if isinstance(synthesized, dict) else "",
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
@@ -117,27 +132,10 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
                 }
             )
             continue
-        receipt = yield context.call_activity(
-            "activity_gateway_commit_tournament",
-            {
-                "layer_name": active_layer,
-                "candidates": candidates,
-                "target_blob": checkpoint_blob,
-                "journal_blob": journal_blob,
-                "journal_capacity": journal_capacity,
-            },
-        )
         trial += 1
         loss = float(receipt.get("loss", current_loss))
         winner_name = receipt.get("winner", "")
-        winner_cand = next((candidate for candidate in candidates if candidate.get("name") == winner_name), None)
-        if winner_cand:
-            dist = integer_distance(str(winner_cand.get("w", "")), str(slice_state["totr_w"]))
-            gamma_match = re.search(r"g:([0-9.]+)", str(winner_cand.get("w", "")))
-            gamma_val = gamma_match.group(1) if gamma_match else "?"
-            winner_step = f"g={gamma_val} d={dist}"
-        else:
-            winner_step = ""
+        winner_step = str(receipt.get("winner_step") or "")
         trials.append(
             {
                 "trial": trial,
@@ -147,7 +145,7 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
                 "status": receipt.get("status"),
                 "winner": winner_name,
                 "winner_step": winner_step,
-                "gradient_hint": slice_state.get("gradient_hint", ""),
+                "probe": reader["probe"],
                 "reasoning": str(synthesized.get("reasoning") or "") if isinstance(synthesized, dict) else "",
                 "confidence": synthesized.get("confidence") if isinstance(synthesized, dict) else None,
                 "prompt_tokens": prompt_tokens,
@@ -232,17 +230,22 @@ def _attempt_report(payload: dict, record: dict[str, Any]) -> str:
         f"Accepted: {record.get('accepted')}",
         f"Error: {record.get('error') or '-'}",
         f"Tokens: prompt {record.get('prompt_tokens')} completion {record.get('completion_tokens')} total {record.get('total_tokens')}",
-        f"Active w: `{payload.get('active_w')}`",
-        f"Active b: `{payload.get('active_b')}`",
-        f"Gradient: {payload.get('gradient_hint')}",
         "",
-        "Candidates:",
+        "Parameters:",
     ]
+    context = payload.get("context") or {}
+    for field in context.get("parameters") or []:
+        lines.append(f"- {field.get('key')} ({field.get('role')}, {field.get('scheme', '')}): `{field.get('token')}`")
+    probe = context.get("probe") or {}
+    lines.append(f"Probe {probe.get('key', '')}: {probe.get('token', '')}")
+    lines.extend(["", "Candidates:"])
     for candidate in record.get("candidates") or []:
-        distance = integer_distance(str(candidate.get("w") or ""), str(payload.get("active_w") or ""))
-        lines.append(f"- {candidate.get('name')} distance {distance}")
-        lines.append(f"  - w: `{candidate.get('w')}`")
-        lines.append(f"  - b: `{candidate.get('b')}`")
+        lines.append(f"- {candidate.get('name')}")
+        fields = candidate.get("fields") or {}
+        if not fields:
+            fields = {"w": candidate.get("w"), "b": candidate.get("b")}
+        for key, token in fields.items():
+            lines.append(f"  - {key}: `{token}`")
     if not record.get("candidates"):
         lines.append("- none")
     lines.extend(["", "Raw completion:", "", "```json", str(record.get("content") or ""), "```"])
@@ -250,8 +253,23 @@ def _attempt_report(payload: dict, record: dict[str, Any]) -> str:
 
 
 @bp.activity_trigger(input_name="payload")
+def activity_gateway_compile_prompt(payload: dict) -> dict[str, Any]:
+    from tools import tensor_engine
+
+    prompt = tensor_engine.compile_prompt(
+        payload["checkpoint_blob"],
+        payload["journal_blob"],
+        payload["layer_name"],
+        int(payload.get("visible_history", 3)),
+        int(payload.get("int_bound", 25)),
+        str(payload.get("retry_note") or ""),
+    )
+    return {"prompt": prompt}
+
+
+@bp.activity_trigger(input_name="payload")
 def activity_gateway_synthesize(payload: dict) -> dict[str, Any]:
-    """Direct chat completion. Three mutated candidates, no system message, no tools."""
+    """Send one compiled prompt. Candidate text is extracted; C++ scores it."""
     from openai import AzureOpenAI
 
     client = AzureOpenAI(
@@ -260,37 +278,58 @@ def activity_gateway_synthesize(payload: dict) -> dict[str, Any]:
         azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
     )
     deployment = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5-mini")
-
-    def complete(prompt: str) -> tuple[str, int, int, int]:
-        response = client.chat.completions.create(
-            model=deployment,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            reasoning_effort="none",
-        )
-        usage = response.usage
-        return (
-            response.choices[0].message.content or "",
-            int(usage.prompt_tokens) if usage is not None else 0,
-            int(usage.completion_tokens) if usage is not None else 0,
-            int(usage.total_tokens) if usage is not None else 0,
-        )
-
-    def on_attempt(record: dict[str, Any]) -> None:
-        logged = {
-            "source": "modular_model_orchestrator",
-            "layer": payload.get("layer_name"),
-            "active_w": payload.get("active_w"),
-            "gradient_hint": payload.get("gradient_hint"),
-            **record,
-        }
-        append_attempt(logged)
-        publish_report(f"trial {payload.get('layer_name')} attempt {record.get('attempt')}", _attempt_report(payload, record))
-
-    result = collect_tournament(payload, complete, on_attempt)
-    print(
-        f"[tokens] prompt={result['prompt_tokens']} completion={result['completion_tokens']} "
-        f"total={result['total_tokens']} attempts={result['attempts']} "
-        f"mutation_failed={result['mutation_failed']}"
+    response = client.chat.completions.create(
+        model=deployment,
+        messages=[{"role": "user", "content": str(payload.get("prompt") or "")}],
+        response_format={"type": "json_object"},
+        reasoning_effort="none",
     )
-    return result
+    usage = response.usage
+    text = response.choices[0].message.content or ""
+    prompt_tokens = int(usage.prompt_tokens) if usage is not None else 0
+    completion_tokens = int(usage.completion_tokens) if usage is not None else 0
+    total_tokens = int(usage.total_tokens) if usage is not None else 0
+    try:
+        candidates, meta = extract_tournament(text, dict(payload.get("context") or {}))
+        error = ""
+        failed = False
+    except TournamentParseError as exc:
+        candidates, meta = [], {}
+        error = str(exc)
+        failed = True
+    record = {
+        "attempt": int(payload.get("attempt") or 1),
+        "accepted": not failed,
+        "error": error,
+        "content": text,
+        "candidates": candidates,
+        "reasoning": meta.get("reasoning", ""),
+        "confidence": meta.get("confidence", 0.5),
+        "meta": meta,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }
+    append_attempt({
+        "source": "modular_model_orchestrator",
+        "layer": payload.get("layer_name"),
+        "parameters": (payload.get("context") or {}).get("parameters"),
+        "probe": (payload.get("context") or {}).get("probe"),
+        **record,
+    })
+    publish_report(f"trial {payload.get('layer_name')} attempt {record['attempt']}", _attempt_report(payload, record))
+    print(
+        f"[tokens] prompt={prompt_tokens} completion={completion_tokens} "
+        f"total={total_tokens} mutation_failed={failed}"
+    )
+    return {
+        "candidates": candidates,
+        "reasoning": meta.get("reasoning", ""),
+        "confidence": meta.get("confidence", 0.5),
+        "meta": meta,
+        "mutation_failed": failed,
+        "error": error,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }

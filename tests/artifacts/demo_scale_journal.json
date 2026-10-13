@@ -1,0 +1,13 @@
+{
+  "task": "scale",
+  "general_description": "DemoScale journal scheme. origin names the architecture. status is seed on the opening row.",
+  "last_checksum": "e17eeb54dbcc9c72",
+  "last_committed_loss": 0.2579,
+  "history": [
+    {
+      "loss": 0.2579,
+      "checksum": "e17eeb54dbcc9c72",
+      "metrics": [{"name": "origin", "type": "text", "value": "demo_scale", "prompt_description": "Architecture that opened this checkpoint."}, {"name": "status", "type": "text", "value": "seed", "prompt_description": "Opening row for a DemoScale checkpoint."}]
+    }
+  ]
+}

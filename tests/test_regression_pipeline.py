@@ -15,20 +15,6 @@ def _column(scale: float) -> list[list[float]]:
 
 
 class RegressionPipelineTest(unittest.TestCase):
-    def test_relu_forward_and_mse_are_finite(self) -> None:
-        model = tensor_engine.RegressionMLPModel(
-            [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
-            [0.0, 0.0, 0.0, 0.0],
-            [[1.0], [0.0], [0.0], [0.0]],
-            [0.0],
-        )
-        self.assertEqual(model.forward([[-2.0, 0.5]])[0][0], 0.0)
-        self.assertEqual(model.forward([[2.0, 0.5]])[0][0], 2.0)
-        score = model.evaluate_mse(50)
-        self.assertGreater(score["loss"], 0.0)
-        self.assertGreaterEqual(score["max_residual"], 0.0)
-        self.assertGreaterEqual(score["std_residual"], 0.0)
-
     def test_alternating_matrix_stays_a_totr_token(self) -> None:
         encoded = tensor_engine.TotrEngine.encode_matrix(
             [[1.0, -1.0, 1.0, -1.0], [1.0, -1.0, 1.0, -1.0]], 1
@@ -43,18 +29,8 @@ class RegressionPipelineTest(unittest.TestCase):
         tools = NativeStorageTools()
         zeros = tensor_engine.TotrEngine.encode_matrix([[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 1)
         layer2 = tensor_engine.TotrEngine.encode_matrix(_column(0.0), 1)
-        biased = tensor_engine.RegressionMLPModel(
-            [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
-            [0.0, 0.0, 0.0, 0.0],
-            _column(0.0),
-            [1.0],
-        ).evaluate_mse(50)
-        zero_score = tensor_engine.RegressionMLPModel(
-            [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]],
-            [0.0, 0.0, 0.0, 0.0],
-            _column(0.0),
-            [0.0],
-        ).evaluate_mse(50)
+        zero_score = tensor_engine.score_totr_candidate(zeros, layer2, "0 0 0 0", "0")
+        biased = tensor_engine.score_totr_candidate(zeros, layer2, "0 0 0 0", "1")
         worse_bias, better_bias = ("0", "1") if zero_score["loss"] > biased["loss"] else ("1", "0")
 
         first = tools.commit_winner_native(

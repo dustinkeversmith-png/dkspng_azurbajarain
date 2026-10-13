@@ -1,12 +1,19 @@
 #pragma once
+#include "stevejob/core/metric_descriptor.hpp"
+#include "stevejob/models/candidate_scheme.hpp"
+#include "stevejob/models/evaluation_score.hpp"
+#include "stevejob/models/neural_network.hpp"
+#include "stevejob/messaging/container_scheme.hpp"
+#include "stevejob/messaging/encoding_scheme.hpp"
+#include "stevejob/messaging/output_scheme.hpp"
+#include "stevejob/messaging/totr_engine.hpp"
+#include "stevejob/models/eval_scheme.hpp"
+#include "stevejob/models/journal_spec.hpp"
+#include "stevejob/models/slice_scheme.hpp"
+#include "stevejob/storage/metric_fields.hpp"
 
-#include "stevejob/models/neural_model.hpp"
-
-#include <algorithm>
-#include <cmath>
-#include <map>
-#include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace stevejob::models {
@@ -17,141 +24,103 @@ struct ModelDirective {
     std::string rules;
 };
 
+struct SchemeNotes {
+    std::string weights;
+    std::string bias;
+    std::string output;
+};
+
+struct TelemetrySignal {
+    core::DescribedField field;
+    const messaging::IEncodingScheme* encoding = nullptr;
+};
+
 class ModelTemplate {
 public:
     virtual ~ModelTemplate() = default;
 
-    virtual NeuralModel& network() = 0;
-    virtual const NeuralModel& network() const = 0;
-    virtual std::vector<double> forward(const std::vector<double>& input) const = 0;
-    virtual RegressionScore evaluate(int sample_count = 50) const = 0;
-    virtual ModelDirective get_directives() const = 0;
-    virtual RegressionScore score_network(const NeuralModel& model, int sample_count = 50) const = 0;
+    virtual NeuralNetwork& network() = 0;
+    virtual const NeuralNetwork& network() const = 0;
 
-    std::vector<SliceRef> get_slice_roster(std::size_t max_block = stevejob::core::kSliceBlock) const {
-        return network().get_slice_roster(max_block);
-    }
+    virtual ModelEvaluation evaluate_model(int sample_count = 0) const = 0;
+    virtual ModelEvaluation score_patch(const NeuralNetwork& candidate_net, int sample_count = 0) const = 0;
 
-    std::map<std::string, double> derive_training_telemetry() const {
-        double count = 0.0;
-        double sum = 0.0;
-        double square = 0.0;
-        double peak = 0.0;
-        double sparse = 0.0;
-        for (const LayerSpec& layer : network().layers) {
-            for (const std::vector<double>& row : layer.weights) {
-                for (double value : row) {
-                    const double magnitude = std::abs(value);
-                    sum += magnitude;
-                    square += value * value;
-                    peak = std::max(peak, magnitude);
-                    if (magnitude < 0.05) {
-                        sparse += 1.0;
-                    }
-                    count += 1.0;
-                }
+    // 2. Extensible Multi-Field Telemetry with Descriptors
+    virtual std::vector<TelemetrySignal> derive_training_telemetry() const = 0;
+
+    // 3. Gradient Probing as an Extensible Telemetry Option
+    virtual core::DescribedField derive_gradient_probe(const std::string& slice_id) const = 0;
+
+    // 4. Decoupled Schemes
+    virtual const messaging::IEncodingScheme& get_scheme_for_slice(const SliceRef& slice) const = 0;
+    virtual const messaging::IEncodingScheme& get_bias_scheme(const SliceRef& slice) const = 0;
+    virtual const messaging::IOutputScheme& get_output_scheme() const = 0;
+
+    virtual CandidateScheme candidate_scheme() const { return CandidateScheme{}; }
+
+    virtual std::string candidate_roles(const storage::JournalRecord* last) const = 0;
+    virtual std::string response_schema() const = 0;
+    virtual std::string training_goal(double current_loss) const = 0;
+    virtual SchemeNotes scheme_notes() const = 0;
+    virtual SliceScheme slice_scheme() const = 0;
+    virtual EvalScheme eval_scheme() const = 0;
+    virtual const messaging::IContainerScheme& container_scheme() const = 0;
+
+    virtual JournalConfig journal_config() const { return JournalConfig{}; }
+
+    virtual std::string journal_scheme_text() const { return ""; }
+
+    virtual storage::JournalRecord seed_record(const ModelEvaluation& score, const std::string& checksum) const = 0;
+
+    virtual storage::JournalRecord trial_record(const TrialNote& note) const = 0;
+
+    virtual CheckpointDocument checkpoint_document(const ModelEvaluation& score, const std::string& checksum) const {
+        CheckpointDocument document;
+        document.fields.push_back(storage::MetricFields::number("loss", score.primary_loss, "Scored loss."));
+        for (const core::DescribedField& field : score.metrics) {
+            if (field.key == "loss" || !std::holds_alternative<double>(field.value)) {
+                continue;
             }
+            document.fields.push_back(
+                storage::MetricFields::number(field.key, std::get<double>(field.value), field.actionable_rule));
         }
-        const double mean = count == 0.0 ? 0.0 : sum / count;
-        std::map<std::string, double> telemetry;
-        telemetry["sparsity"] = count == 0.0 ? 0.0 : sparse / count;
-        telemetry["variance"] = count == 0.0 ? 0.0 : square / count;
-        telemetry["condition"] = peak / std::max(mean, 1e-6);
-        return telemetry;
+        document.fields.push_back(storage::MetricFields::text("checksum", checksum, storage::MetricType::Token));
+        document.fields.push_back(storage::MetricFields::text("architecture", network().architecture));
+        return document;
     }
 
-    std::string compute_slice_gradient(const std::string& slice_id) const {
-        const SliceRef slice = network().find_slice(slice_id);
-        const std::string token = network().slice_token(slice);
-        const std::vector<int> left = codes_of(token, "A:");
-        const std::vector<int> right = codes_of(token, "B:");
-        const double baseline = evaluate().loss;
-        std::ostringstream hint;
-        hint << "A:[";
-        write_signs(hint, token, "A:", left, slice, baseline);
-        hint << "] B:[";
-        write_signs(hint, token, "B:", right, slice, baseline);
-        hint << "]";
-        return hint.str();
+    void bind_journal(std::size_t capacity_override = 0) {
+        const JournalConfig config = journal_config();
+        const std::size_t capacity = capacity_override == 0 ? config.capacity : capacity_override;
+        journal_ = storage::SlidingJournal(capacity, config.description);
+        journal_.set_task(config.task);
     }
 
-protected:
-    static std::vector<double> sample_input(int index, int sample_count, std::size_t in_dim) {
-        constexpr double kPi = 3.141592653589793;
-        const double count = static_cast<double>(sample_count);
-        std::vector<double> input(in_dim, 0.0);
-        for (std::size_t axis = 0; axis < in_dim; ++axis) {
-            if (axis == 0) {
-                input[axis] = (static_cast<double>(index) / count) * kPi;
-            } else if (axis == 1) {
-                input[axis] = (static_cast<double>(sample_count - index) / count) * kPi;
-            } else {
-                const int phase = (index + static_cast<int>(axis) * 3) % sample_count;
-                input[axis] = (static_cast<double>(phase) / count) * kPi;
-            }
-        }
-        return input;
+    void take_journal(storage::SlidingJournal journal) { journal_ = std::move(journal); }
+
+    storage::SlidingJournal& journal() { return journal_; }
+    const storage::SlidingJournal& journal() const { return journal_; }
+
+    void append_seed(const ModelEvaluation& score, const std::string& checksum) {
+        journal_.append_record(seed_record(score, checksum));
+    }
+
+    // Serialization wrappers
+    std::string serialize_slice(const SliceRef& slice) const {
+        return get_scheme_for_slice(slice).serialize_matrix(network().layers[slice.layer_index].extract_block(slice));
+    }
+    std::string serialize_bias(const SliceRef& slice) const {
+        return get_bias_scheme(slice).serialize_vector(network().layers[slice.layer_index].biases, slice.col_offset, slice.cols);
+    }
+    void apply_slice_patch(const SliceRef& slice, const std::string& w_token, const std::string& b_token) {
+        const std::vector<std::vector<double>> block =
+            get_scheme_for_slice(slice).deserialize_matrix(w_token, slice.rows, slice.cols);
+        const std::vector<double> bias = get_bias_scheme(slice).deserialize_vector(b_token, slice.cols);
+        network().patch_slice(slice.slice_id, block, bias);
     }
 
 private:
-    static std::vector<int> codes_of(const std::string& token, const char* key) {
-        const std::size_t start = token.find(key);
-        const std::size_t from = start + std::char_traits<char>::length(key);
-        const std::size_t end = token.find('|', from);
-        std::istringstream input(token.substr(from, end == std::string::npos ? std::string::npos : end - from));
-        std::vector<int> codes;
-        int value = 0;
-        while (input >> value) {
-            codes.push_back(value);
-        }
-        return codes;
-    }
-
-    static std::string with_code(const std::string& token, const char* key, std::size_t index, int value) {
-        const std::vector<int> codes = codes_of(token, key);
-        std::ostringstream replaced;
-        for (std::size_t cursor = 0; cursor < codes.size(); ++cursor) {
-            if (cursor > 0) {
-                replaced << ' ';
-            }
-            replaced << (cursor == index ? value : codes[cursor]);
-        }
-        const std::size_t start = token.find(key) + std::char_traits<char>::length(key);
-        const std::size_t end = token.find('|', start);
-        return token.substr(0, start) + replaced.str() + (end == std::string::npos ? "" : token.substr(end));
-    }
-
-    void write_signs(std::ostringstream& hint,
-                     const std::string& token,
-                     const char* key,
-                     const std::vector<int>& codes,
-                     const SliceRef& slice,
-                     double baseline) const {
-        for (std::size_t index = 0; index < codes.size(); ++index) {
-            if (index > 0) {
-                hint << ", ";
-            }
-            const int step = codes[index] >= 99 ? -1 : 1;
-            const int probed = std::max(-99, std::min(99, codes[index] + step));
-            NeuralModel trial = network();
-            const std::string patched = with_code(token, key, index, probed);
-            trial.patch_slice(slice.slice_id,
-                              stevejob::messaging::TotrEngine::decode_matrix(patched, slice.rows, slice.cols),
-                              stevejob::messaging::TotrEngine::decode_vector(network().slice_bias(slice), slice.cols));
-            const double probed_loss = score_network(trial).loss;
-            const double delta = probed_loss - baseline;
-            const double signed_delta = step > 0 ? delta : -delta;
-            const double magnitude = std::abs(signed_delta);
-            const double steep = std::max(0.02, 0.01 * std::abs(baseline));
-            if (magnitude < 1e-8) {
-                hint << '0';
-            } else if (signed_delta > 0.0) {
-                hint << (magnitude >= steep ? "+2" : "+1");
-            } else {
-                hint << (magnitude >= steep ? "-2" : "-1");
-            }
-        }
-    }
+    storage::SlidingJournal journal_{1};
 };
 
 }  // namespace stevejob::models

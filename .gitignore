@@ -12,5 +12,6 @@ tools/*.so
 local.settings.json
 .azurite/
 docs
+/reports
 
 docs/scratch/

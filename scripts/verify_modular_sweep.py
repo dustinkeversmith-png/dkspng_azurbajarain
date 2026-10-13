@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrators.dynamic_injector import collect_tournament, integer_distance
+from orchestrators.tournament_evaluator import collect_tournament, completion_context
 from orchestrators.run_report import append_attempt, publish_report
 from tools import tensor_engine
 
@@ -42,9 +42,8 @@ def _section(kind: str, payload: dict, attempts: list[dict], synthesized: dict, 
         f"- Layer: {payload.get('layer_name')}",
         f"- Seed loss: {seeded.get('loss')}",
         f"- Seed checksum: {seeded.get('checksum')}",
-        f"- Active w: `{payload.get('active_w')}`",
-        f"- Active b: `{payload.get('active_b')}`",
-        f"- Gradient: {payload.get('gradient_hint')}",
+        f"- Parameters: {payload.get('parameters')}",
+        f"- Probe: {payload.get('probe')}",
         f"- Attempts: {synthesized.get('attempts')}",
         f"- Billed tokens: {synthesized.get('total_tokens')}",
         f"- Status: {receipt.get('status')}",
@@ -60,7 +59,7 @@ def _section(kind: str, payload: dict, attempts: list[dict], synthesized: dict, 
     for candidate in synthesized.get("candidates") or []:
         name = str(candidate.get("name"))
         row = scored.get(name) or {}
-        distance = integer_distance(str(candidate.get("w") or ""), str(payload.get("active_w") or ""))
+        distance = row.get("distance", "-")
         lines.append(
             f"| {name} | {distance} | {row.get('status', '-')} | {row.get('loss', '-')} | `{candidate.get('w')}` | `{candidate.get('b')}` |"
         )
@@ -83,30 +82,9 @@ def _check(kind: str, factory) -> tuple[int, str, str]:
     layer_name = list(seeded["layers"])[0]
     slice_state = tensor_engine.read_architecture_slice(blob, journal, layer_name)
     _no_matrix(dict(slice_state))
-    payload = {
-        "layer_name": layer_name,
-        "in_dim": int(slice_state["in_dim"]),
-        "out_dim": int(slice_state["out_dim"]),
-        "active_w": slice_state["totr_w"],
-        "active_b": slice_state["biases"],
-        "current_loss": float(slice_state["loss"]),
-        "max_residual": float(slice_state["max_residual"]),
-        "directives": dict(slice_state["directives"]),
-        "telemetry": dict(slice_state["telemetry"]),
-        "gradient_hint": slice_state["gradient_hint"],
-        "rolling_config": {"visible_history_count": 4, "tracked_metrics": ["loss", "delta", "status"]},
-        "training_params": {
-            "target_sparsity": 0.20,
-            "exploration_mode": "tournament_triad",
-            "gamma_bounds": {"fine": [0.02, 0.04], "explore": [0.04, 0.07]},
-        },
-        "history": [
-            {"trial": 1, "loss": 2.0, "delta": 0.4, "status": "rejected"},
-            {"trial": 2, "loss": 1.4, "delta": -0.2, "status": "committed_natively", "winner": "c2"},
-            {"trial": 3, "loss": 4.0, "delta": 1.1, "status": "rejected_divergent", "winner": "c3"},
-            {"trial": 4, "loss": 1.2, "delta": -0.1, "status": "committed_natively", "winner": "c1"},
-        ],
-    }
+    payload = completion_context(dict(slice_state))
+    payload["layer_name"] = layer_name
+    payload["current_loss"] = float(slice_state["loss"])
     client = AzureOpenAI(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],
         api_version="2024-02-01",
@@ -135,7 +113,13 @@ def _check(kind: str, factory) -> tuple[int, str, str]:
         attempts.append(record)
         append_attempt({"source": "verify_modular_sweep", "kind": kind, "layer": payload["layer_name"], **record})
 
-    synthesized = collect_tournament(payload, complete, on_attempt)
+    def compile_prompt(note: str) -> str:
+        return tensor_engine.compile_prompt(blob, journal, layer_name, 3, 25, note)
+
+    def commit(candidates: list) -> dict:
+        return dict(tensor_engine.commit_tournament(layer_name, candidates, blob, journal, 10))
+
+    synthesized = collect_tournament(compile_prompt, complete, commit, payload, on_attempt)
     if synthesized["mutation_failed"]:
         publish_report(
             f"verify {kind}",
@@ -143,10 +127,7 @@ def _check(kind: str, factory) -> tuple[int, str, str]:
         )
         raise SystemExit(f"{kind} candidates copied the active slice: {synthesized['error']}")
     candidates = synthesized["candidates"]
-    for candidate in candidates:
-        if integer_distance(candidate["w"], payload["active_w"]) < 2:
-            raise SystemExit(f"{kind} {candidate['name']} did not mutate the active slice")
-    receipt = tensor_engine.commit_tournament(layer_name, candidates, blob, journal, 10)
+    receipt = synthesized.get("receipt") or {}
     _no_matrix(dict(receipt))
     scored = [dict(row) for row in receipt["candidates"] if row["status"] == "scored"]
     if scored:
@@ -159,14 +140,14 @@ def _check(kind: str, factory) -> tuple[int, str, str]:
         raise SystemExit(f"{kind} changed the checkpoint without a commit")
     accepted = attempts[-1] if attempts else {}
     total = int(accepted.get("total_tokens") or synthesized["total_tokens"])
-    distances = [integer_distance(candidate["w"], payload["active_w"]) for candidate in candidates]
+    distances = [dict(row).get("distance") for row in (receipt.get("candidates") or [])]
     print(
         f"{kind} prompt={accepted.get('prompt_tokens')} "
         f"completion={accepted.get('completion_tokens')} total={total} "
         f"attempts={synthesized['attempts']} billed={synthesized['total_tokens']} "
         f"distances={distances} winner={receipt['winner']} status={receipt['status']} "
         f"loss={receipt['loss']} checksum={receipt['checksum']} "
-        f"hint={slice_state['gradient_hint']}"
+        f"probe={payload['probe'].get('token')}"
     )
     section = _section(kind, payload, attempts, synthesized, dict(receipt), dict(seeded))
     return total, kind, section

@@ -9,6 +9,12 @@ namespace stevejob::math {
 
 class TensorStats {
 public:
+    static TensorStats from_matrix(const std::vector<std::vector<double>>& matrix) {
+        TensorStats stats;
+        stats.compute(matrix);
+        return stats;
+    }
+
     void compute(const std::vector<std::vector<double>>& matrix) {
         double sum = 0.0;
         double min_val = 0.0;

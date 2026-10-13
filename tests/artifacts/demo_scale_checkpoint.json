@@ -1,0 +1,18 @@
+{
+  "status": "seeded",
+  "loss": 0.2579401995444738,
+  "max_residual": 0.7733040823690259,
+  "std_residual": 0.0,
+  "checksum": "e17eeb54dbcc9c72",
+  "architecture": "demo_scale",
+  "origin": "demo_scale",
+  "layers": [
+    "mix",
+    "head"
+  ],
+  "directives": {
+    "task": "3-in scale, tanh mix, linear head.",
+    "model_type": "DemoScaleModel",
+    "rules": "hold the mix. shift the head."
+  }
+}

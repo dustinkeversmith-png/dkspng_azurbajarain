@@ -6,6 +6,7 @@ import re
 import unittest
 import uuid
 
+from orchestrators.tournament_evaluator import field_token
 from tools import tensor_engine
 
 _HINT = re.compile(r"A:\[(?:0|\+1|\+2|-1|-2)(?:, (?:0|\+1|\+2|-1|-2))*\] B:\[(?:0|\+1|\+2|-1|-2)(?:, (?:0|\+1|\+2|-1|-2))*\]")
@@ -33,13 +34,14 @@ class TournamentGateTest(unittest.TestCase):
         self.assertEqual(seeded["directives"]["model_type"], "MlpRegressor")
         slice_state = tensor_engine.read_architecture_slice(blob, journal, list(seeded["layers"])[0])
         _no_matrix(dict(slice_state))
-        self.assertRegex(slice_state["gradient_hint"], _HINT)
+        self.assertRegex(slice_state["probe"]["token"], _HINT)
         self.assertIn("sparsity", dict(slice_state["telemetry"]))
         self.assertLessEqual(int(slice_state["in_dim"]), 4)
+        self.assertEqual(list(slice_state["candidate_scheme"]["slots"]), ["c1", "c2", "c3"])
         receipt = tensor_engine.commit_tournament(
             list(seeded["layers"])[0],
             [
-                {"name": "c1", "w": slice_state["totr_w"], "b": slice_state["biases"]},
+                {"name": "c1", "w": field_token(slice_state, "weights"), "b": field_token(slice_state, "bias")},
                 {"name": "c2", "w": "r:1|g:0.9|A:90 90 90 90|B:90 90 90 90", "b": "1 1 1 1"},
                 {"name": "c3", "w": "r:1|g:0.02|A:1 -1 1 -1|B:1 1 1 1", "b": "0.1 0.1 0.1 0.1"},
             ],
@@ -64,7 +66,7 @@ class TournamentGateTest(unittest.TestCase):
         seeded = tensor_engine.MlpRegressor().seed_to_storage(blob, journal, 10)
         layer = list(seeded["layers"])[0]
         slice_state = tensor_engine.read_architecture_slice(blob, journal, layer)
-        copy = {"w": slice_state["totr_w"], "b": slice_state["biases"]}
+        copy = {"w": field_token(slice_state, "weights"), "b": field_token(slice_state, "bias")}
         receipt = tensor_engine.commit_tournament(
             layer,
             [
@@ -76,10 +78,13 @@ class TournamentGateTest(unittest.TestCase):
             journal,
             10,
         )
-        self.assertEqual(receipt["status"], "rejected")
+        self.assertEqual(receipt["status"], "rejected_zero_mutation")
         self.assertEqual(receipt["winner"], "none")
         self.assertEqual(receipt["checksum"], seeded["checksum"])
-        self.assertEqual([dict(row)["status"] for row in receipt["candidates"]], ["unchanged", "unchanged", "unchanged"])
+        self.assertEqual(
+            [dict(row)["status"] for row in receipt["candidates"]],
+            ["rejected_zero_mutation", "rejected_zero_mutation", "rejected_zero_mutation"],
+        )
 
     def test_drop_smaller_than_one_ten_thousandth_is_rejected(self) -> None:
         blob = f"tour_{uuid.uuid4().hex[:8]}.json"
@@ -87,19 +92,19 @@ class TournamentGateTest(unittest.TestCase):
         seeded = tensor_engine.MlpRegressor().seed_to_storage(blob, journal, 10)
         layer = list(seeded["layers"])[0]
         slice_state = tensor_engine.read_architecture_slice(blob, journal, layer)
-        moved = slice_state["totr_w"].replace("g:0.002", "g:0.002001")
+        moved = "r:1|g:0.002|A:-97 -31 33 99|B:74 74 74 74"
         opened = tensor_engine.commit_tournament(
             layer,
-            [{"name": "c1", "w": moved, "b": slice_state["biases"]}] * 3,
+            [{"name": "c1", "w": moved, "b": field_token(slice_state, "bias")}] * 3,
             blob,
             journal,
             10,
         )
         self.assertEqual(opened["status"], "committed_natively")
-        micro = "r:1|g:0.0022|A:-99 -33 33 99|B:74 74 74 74"
+        micro = "r:1|g:0.002|A:-99 -33 35 97|B:74 74 74 74"
         receipt = tensor_engine.commit_tournament(
             layer,
-            [{"name": "c1", "w": micro, "b": slice_state["biases"]}] * 3,
+            [{"name": "c1", "w": micro, "b": field_token(slice_state, "bias")}] * 3,
             blob,
             journal,
             10,

@@ -20,12 +20,7 @@ PYBIND11_MODULE(native_engine, module) {
         .def_readwrite("iterations", &stevejob::results::NativeResult::iterations)
         .def_readwrite("threads", &stevejob::results::NativeResult::threads)
         .def_readwrite("count", &stevejob::results::NativeResult::count)
-        .def_readwrite("sum", &stevejob::results::NativeResult::sum)
-        .def_readwrite("mean", &stevejob::results::NativeResult::mean)
-        .def_readwrite("variance", &stevejob::results::NativeResult::variance)
-        .def_readwrite("min_value", &stevejob::results::NativeResult::min_value)
-        .def_readwrite("max_value", &stevejob::results::NativeResult::max_value)
-        .def_readwrite("rms", &stevejob::results::NativeResult::rms)
+        .def_readwrite("metrics", &stevejob::results::NativeResult::metrics)
         .def_readwrite("checksum", &stevejob::results::NativeResult::checksum)
         .def_readwrite("elapsed_ns", &stevejob::results::NativeResult::elapsed_ns)
         .def("to_dict", &stevejob::results::NativeResult::to_python_dict);

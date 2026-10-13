@@ -22,7 +22,7 @@ class Compressor:
         return bytes(raw)
 
     def open_seal(self, blob: bytes) -> dict[str, Any]:
-        document = self.engine().TensorCompressor.unpack(blob)
+        document = self.engine().SJC1Compressor.unpack(blob)
         document["format"] = self.FORMAT
         document["bytes"] = len(blob)
         document["checksum"] = self.engine().content_checksum(blob)

@@ -83,16 +83,16 @@ inline stevejob::results::NativeResult crunch(const std::string& input_json,
     const auto started = std::chrono::steady_clock::now();
     std::vector<double> current = std::move(parsed.samples);
     std::vector<double> next(current.size());
-    const int threads = stevejob::results::choose_threads(current.size());
+    stevejob::results::SampleProcessor processor;
+    const int threads = processor.choose_threads(current.size());
     for (int pass = 0; pass < iterations; ++pass) {
-        stevejob::results::smooth_pass(current, next, threads);
+        processor.smooth_pass(current, next, threads);
         current.swap(next);
     }
     const auto finished = std::chrono::steady_clock::now();
     const auto elapsed_ns =
         std::chrono::duration_cast<std::chrono::nanoseconds>(finished - started).count();
-    stevejob::results::NativeResult result =
-        stevejob::results::reduce_samples(current, iterations, threads, elapsed_ns);
+    stevejob::results::NativeResult result = processor.reduce_samples(current, iterations, threads, elapsed_ns);
     cache.put(key, result);
     return result;
 }

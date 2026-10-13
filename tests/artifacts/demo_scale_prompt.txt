@@ -1,0 +1,59 @@
+=== TASK SPECIFICATION ===
+Model: demo_scale
+Slice: mix [3x2]
+DemoScale goal: shrink the scale loss below 0.0500. Current Best Loss: 0.2579
+
+=== RECENT TRAJECTORY & JOURNAL ===
+DemoScale journal scheme. origin names the architecture. status is seed on the opening row.
+Journal scheme: task scale. origin is text and names the architecture. status is text and is seed on the opening row.
+- origin: Architecture that opened this checkpoint.
+- status: Opening row for a DemoScale checkpoint.
+- T1 loss=0.2579 origin=demo_scale status=seed
+
+=== SYSTEM TELEMETRY & DIAGNOSTICS ===
+[scale_span]: 0.0600
+  -> Interpretation: Highest scale weight minus the lowest scale weight.
+  -> Guidance: A wide span means the mix layer is unbalanced. Prefer the hold candidate.
+  -> Encoding: span_decimal
+     Format: One finite decimal.
+     Equation: span = highest weight - lowest weight.
+     Codec: Read the decimal as a span. It is not a TOTR token.
+[mix_sign]: +1
+  -> Interpretation: Sign of the first mix weight.
+  -> Guidance: Use the mix_sign codec. +1 keeps the mix. -1 reverses the head step.
+  -> Encoding: mix_sign
+     Format: +1 or -1.
+     Equation: sign = +1 when the first mix weight is non-negative, otherwise -1.
+     Codec: +1 means hold can keep the mix. -1 means shift should reverse the head step.
+
+=== DIRECTIONAL GRADIENT PROBE ===
+Probe Data: mix:+1
+Format Definition: One mark for the first mix weight. +1 means that weight is non-negative.
+Actionable Rules: hold keeps the mix integers. shift moves the head integers by 1 or 2 in the opposite direction of the mark.
+
+=== PARAMETER ENCODINGS & ACTIVE STATE ===
+Weight Scheme: totr_rank1
+  Format: r:1|g:<gamma>|A:<row ints>|B:<col ints>
+  Equation: W[row][col] = (A[row] * gamma) * (B[col] * gamma).
+  Codec: Codes are clamped to [-99, 99] before scoring.
+  Model: DemoScale stores mix and head as rank-1 tokens. hold edits mix. shift edits head.
+Bias Scheme: bias_float
+  Format: space-separated finite floats, one per output coordinate
+  Equation: bias[col] = the parsed float.
+  Codec: Each value must be finite.
+  Model: Bias values are plain floats, one per output of the active slice.
+Output Scheme: scale_output. Format: One decimal, the linear head's scale prediction.. Equation: prediction = head(mix(input)).. Rules: The value is finite. The prompt does not list the target grid.
+  Model: The scale target is half the sum of the three inputs. The head prediction uses scale_output.
+Active Slice: w:"r:1|g:0.0020409247521986098|A:-20 40 99|B:97 48" | b:"0.10 0.10"
+
+=== CANDIDATE ROLES & CONSTRAINTS ===
+Bound: Ints must stay in [-25, 25]. Never write < -99 or > 99.
+DemoScale candidates: hold keeps gamma in 0.010-0.020. shift uses gamma in 0.020-0.040. Do not add a third candidate.
+
+Output valid JSON ONLY:
+{
+  "reasoning": "<one sentence naming whether hold or shift should win>",
+  "confidence": <float 0.1 to 1.0>,
+  "hold": {"w": "...", "b": "..."},
+  "shift": {"w": "...", "b": "..."}
+}

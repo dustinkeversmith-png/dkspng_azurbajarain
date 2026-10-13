@@ -244,6 +244,35 @@ private:
         return std::stod(field(encoded, key));
     }
 
+public:
+    static int clamp_int(int code, int bound = 99) {
+        if (code < -bound) {
+            return -bound;
+        }
+        if (code > bound) {
+            return bound;
+        }
+        return code;
+    }
+
+    static int integer_distance(const std::string& candidate, const std::string& active) {
+        int distance = 0;
+        for (const char* key : {"A:", "B:"}) {
+            const std::vector<int> left = field_ints(candidate, key);
+            const std::vector<int> right = field_ints(active, key);
+            if (left.empty() || right.empty() || left.size() != right.size()) {
+                const std::size_t span = std::max(left.size(), right.size());
+                return static_cast<int>(std::max<std::size_t>(span, 2));
+            }
+            for (std::size_t index = 0; index < left.size(); ++index) {
+                if (left[index] != right[index]) {
+                    ++distance;
+                }
+            }
+        }
+        return distance;
+    }
+
     static std::vector<int> field_ints(const std::string& encoded, const char* key) {
         std::string text = field(encoded, key);
         for (char& character : text) {
@@ -255,10 +284,7 @@ private:
         std::vector<int> values;
         int value = 0;
         while (input >> value) {
-            if (value < -99 || value > 99) {
-                throw std::invalid_argument("TOTR code is outside the int8 range");
-            }
-            values.push_back(value);
+            values.push_back(clamp_int(value));
         }
         if (values.empty()) {
             throw std::invalid_argument("TOTR token is missing a factor");

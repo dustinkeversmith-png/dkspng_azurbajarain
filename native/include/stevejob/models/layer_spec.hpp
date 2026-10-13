@@ -15,12 +15,12 @@ struct LayerSpec {
     std::string name;
     std::size_t in_dim = 0;
     std::size_t out_dim = 0;
-    ActivationType activation = ActivationType::Linear;
+    const IActivation* activation = &Activations::linear();
     std::vector<std::vector<double>> weights;
     std::vector<double> biases;
 
-    LayerSpec(std::string layer_name, std::size_t in_d, std::size_t out_d, ActivationType act)
-        : name(std::move(layer_name)), in_dim(in_d), out_dim(out_d), activation(act) {
+    LayerSpec(std::string layer_name, std::size_t in_d, std::size_t out_d, const IActivation& act)
+        : name(std::move(layer_name)), in_dim(in_d), out_dim(out_d), activation(&Activations::canonical(act)) {
         weights.assign(in_dim, std::vector<double>(out_dim, 0.0));
         biases.assign(out_dim, 0.1);
     }
@@ -45,7 +45,7 @@ struct LayerSpec {
                 sum += input[row] * weights[row][col];
             }
             stevejob::core::require_finite(sum);
-            output[col] = apply_activation(sum, activation);
+            output[col] = activation->apply(sum);
         }
         return output;
     }

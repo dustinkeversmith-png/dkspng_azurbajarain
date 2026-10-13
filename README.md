@@ -1,21 +1,20 @@
 # stevejob
 
-Tiny neural workflows for Azure Functions. You describe a network as a C++ `NeuralModel`. The durable loop asks the LLM to edit one slice of that network per trial. C++ scores the full network and writes the checkpoint only when the loss drops.
+Tiny neural workflows for Azure Functions. You describe a network as a C++ `NeuralNetwork`. The durable loop asks the LLM to edit one slice of that network per trial. The architecture scores the full network and writes the checkpoint only when the loss drops.
 
 Python passes blob names and the slice text. Numeric work, HMAC signing, HTTP to Azurite, and checkpoint parsing run in the compiled extension `build/native/tensor_engine`. The one Python walk that stays is `tools/core/host.py`, which discovers tool classes for the Functions host.
 
 ## Create a model
 
-A model is a chain of layers. Each layer has a name, an input width, an output width, and an activation. The next layer's input width must equal the previous layer's output width. Call `set_loss` before seeding. The scorer runs mean squared error. `CrossEntropy` and `MeanAbsoluteError` are declared on the enum and are rejected by `evaluate_mse` until a scorer is added for them.
+A network is a chain of layers. Each layer has a name, an input width, an output width, and an activation. The next layer's input width must equal the previous layer's output width. The architecture that adopts the network owns the loss. A seeded custom stack is scored by the regressor.
 
 ```python
 from tools import tensor_engine
 
-model = tensor_engine.NeuralModel("CustomDeepClassifier")
-model.add_layer("stem", 8, 16, tensor_engine.ActivationType.ReLU) \
-     .add_layer("hidden", 16, 8, tensor_engine.ActivationType.Tanh) \
-     .add_layer("head", 8, 1, tensor_engine.ActivationType.Linear) \
-     .set_loss(tensor_engine.LossType.MeanSquaredError)
+model = tensor_engine.NeuralNetwork("CustomDeepClassifier")
+model.add_layer("stem", 8, 16, tensor_engine.ReLUActivation()) \
+     .add_layer("hidden", 16, 8, tensor_engine.TanhActivation()) \
+     .add_layer("head", 8, 1, tensor_engine.LinearActivation())
 
 model.initialize_default_weights()
 receipt = model.seed_to_storage("custom_deep.json", "custom_deep_journal.json")
@@ -23,7 +22,7 @@ receipt = model.seed_to_storage("custom_deep.json", "custom_deep_journal.json")
 
 `initialize_default_weights` fills each weight with `0.02 * (row - col)` and leaves each bias at `0.1`. `seed_to_storage` scores the network, packs it as an SJC1 blob in the `models` container, and writes the first journal entry under `evals`. The receipt contains `status`, `loss`, `max_residual`, `checksum`, and `layers`. It does not contain weight matrices.
 
-Activations are `Linear`, `ReLU`, `Tanh`, and `Sigmoid`. Hidden layers use the activation you set. The output layer is linear when you pass `ActivationType.Linear`, which is what you want for regression. The activation and the loss type travel with the checkpoint, so a Tanh hidden layer is still Tanh after the blob is loaded again.
+Activations are `LinearActivation`, `ReLUActivation`, `TanhActivation`, and `SigmoidActivation`. Each one exposes `apply` and `derivative`. Hidden layers use the activation you set. The output layer is linear when you pass `LinearActivation()`, which is what you want for regression. The activation travels with the checkpoint, so a Tanh hidden layer is still Tanh after the blob is loaded again.
 
 A shape list still works when every hidden layer is ReLU and the last layer is linear:
 
@@ -201,14 +200,14 @@ The tournament completion has no token cap. The prompt tells the model to change
 ## Layout
 
 ```text
-agents/                 Agent definitions (*.agent.md)
-orchestrators/          Durable training loop
+orchestrators/          Durable training loop and the tournament evaluator
 scripts/                verify_modular_sweep.py and local seed helpers
 reports/                latest_report.md, timestamped copies, tournament_completions.jsonl
 native/include/stevejob/
   core/                 config, hash, binary helpers
-  models/               NeuralModel, ModelTemplate, MlpRegressor, BottleneckAutoencoder
-  messaging/            TOTR tokenizer and SJC1 container
+  models/               NeuralNetwork, ModelTemplate, MlpRegressor, BottleneckAutoencoder
+  messaging/            TOTR tokenizer, encoding schemes, and SJC1 container
+  compiler/             PromptCompiler
   storage/              Azurite client and sliding journal
   bridge/               ModularOrchestrator, EngineGateway, and the older two-layer pipeline
 native/bindings/        pybind11 module
@@ -268,10 +267,6 @@ POST http://localhost:7071/api/orchestrators/optimize_modular_orchestrator
 POST http://localhost:7071/api/orchestrators/modular_model_orchestrator
 ```
 
-Chat routes from `agents/` are separate from the training loop:
-
-```text
-GenerativeTuner_chat: POST http://localhost:7071/agents/GenerativeTuner/chat
-```
+The training loop is the durable orchestrator `modular_model_orchestrator`. The prompt for each slice is compiled in C++.
 
 Stop the host when the run finishes. The listener is the process bound to port 7071. Azurite on port 10000 is a different process and should keep running.

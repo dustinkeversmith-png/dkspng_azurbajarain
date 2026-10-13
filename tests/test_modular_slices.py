@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 import uuid
 
+from orchestrators.tournament_evaluator import field_token
 from tools import tensor_engine
 
 
@@ -42,8 +43,8 @@ class ModularSliceTest(unittest.TestCase):
             self.assertGreaterEqual(len(list(meta["layers"])), len(shapes))
             widest = tensor_engine.read_layer_slice(blob, journal, list(meta["layers"])[0])
             _no_matrix(dict(widest))
-            self.assertTrue(str(widest["totr_w"]).startswith("r:1|g:"))
-            self.assertNotIn("000000", str(widest["biases"]))
+            self.assertTrue(field_token(widest, "weights").startswith("r:1|g:"))
+            self.assertNotIn("000000", field_token(widest, "bias"))
             self.assertLessEqual(int(widest["in_dim"]), 4)
             self.assertLessEqual(int(widest["out_dim"]), 4)
             receipt = tensor_engine.commit_slice_native(
@@ -61,12 +62,10 @@ class ModularSliceTest(unittest.TestCase):
             self.assertEqual(receipt["checksum"], seeded["checksum"])
 
     def test_neural_model_chains_layers_and_seeds(self) -> None:
-        model = tensor_engine.NeuralModel("CustomDeepClassifier")
-        model.add_layer("stem", 8, 16, tensor_engine.ActivationType.ReLU).add_layer(
-            "hidden", 16, 8, tensor_engine.ActivationType.Tanh
-        ).add_layer("head", 8, 1, tensor_engine.ActivationType.Linear).set_loss(
-            tensor_engine.LossType.MeanSquaredError
-        )
+        model = tensor_engine.NeuralNetwork("CustomDeepClassifier")
+        model.add_layer("stem", 8, 16, tensor_engine.ReLUActivation()).add_layer(
+            "hidden", 16, 8, tensor_engine.TanhActivation()
+        ).add_layer("head", 8, 1, tensor_engine.LinearActivation())
         model.initialize_default_weights()
         blob = f"custom_{uuid.uuid4().hex[:8]}.json"
         journal = f"custom_{uuid.uuid4().hex[:8]}.json"

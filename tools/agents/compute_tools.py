@@ -106,7 +106,7 @@ class ComputeTools:
         engine.validate_tiny_inputs(inputs, 8, 8)
         checkpoint = self.blobs.read_model(str(args.get("weights_blob", "")))
         weights, biases = engine.single_layer(checkpoint)
-        outputs = engine.linear_outputs(inputs, weights, biases)
+        outputs = engine.math.linear_outputs(inputs, weights, biases)
         stored = self.blobs.write_model(str(args.get("target_blob", "")), checkpoint, outputs)
         return {
             "status": "evaluated",
