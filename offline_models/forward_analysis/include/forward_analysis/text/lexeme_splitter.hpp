@@ -48,18 +48,27 @@ struct LexemeSplitter {
         return lexemes;
     }
 
+    // A "." between a lexeme ending in a digit and one starting with a digit is a decimal point ("1.825",
+    // "x3-0.5·x7") and is joined without spaces.
     static std::string join(const std::vector<std::string>& lexemes) {
         std::string out;
         bool suppress_next_space = true;
-        for (const std::string& lex : lexemes) {
+        for (std::size_t i = 0; i < lexemes.size(); ++i) {
+            const std::string& lex = lexemes[i];
             const bool closes = lex == "," || lex == "." || lex == ";" || lex == ":" || lex == ")" || lex == "/";
             if (!suppress_next_space && !closes) {
                 out += ' ';
             }
             out += lex;
-            suppress_next_space = (lex == "(" || lex == "/");
+            suppress_next_space = (lex == "(" || lex == "/") || is_decimal_point(lexemes, i);
         }
         return out;
+    }
+
+    static bool is_decimal_point(const std::vector<std::string>& lexemes, std::size_t i) {
+        return lexemes[i] == "." && i > 0 && i + 1 < lexemes.size() && !lexemes[i - 1].empty() &&
+               !lexemes[i + 1].empty() && std::isdigit(static_cast<unsigned char>(lexemes[i - 1].back())) &&
+               std::isdigit(static_cast<unsigned char>(lexemes[i + 1].front()));
     }
 
     static std::string lowercase(const std::string& text) {

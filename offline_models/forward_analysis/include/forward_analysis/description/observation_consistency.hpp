@@ -65,16 +65,36 @@ private:
         return token.size() > 1 && token[0] == 'x' && all_digits(token, 1);
     }
 
+    static const std::set<std::string>& count_nouns() {
+        static const std::set<std::string> nouns = {"units", "samples", "outputs", "coordinates", "inputs",
+                                                    "first-layer", "second-layer", "hidden", "observations"};
+        return nouns;
+    }
+
+    // lex[i] is the integer or fractional part of a decimal number split at its point, e.g. "1" "." "825".
+    static bool is_decimal_part(const std::vector<std::string>& lex, std::size_t i) {
+        return (i + 1 < lex.size() && LexemeSplitter::is_decimal_point(lex, i + 1)) ||
+               (i > 0 && LexemeSplitter::is_decimal_point(lex, i - 1));
+    }
+
+    // lex[i] directly precedes a count noun, or precedes one with a single modifier between ("25 input coordinates").
+    static bool before_count_noun(const std::vector<std::string>& lex, std::size_t i) {
+        return (i + 1 < lex.size() && count_nouns().count(lex[i + 1]) > 0) ||
+               (i + 2 < lex.size() && lex[i + 1] != "of" && count_nouns().count(lex[i + 2]) > 0);
+    }
+
     static std::string indices_exist(const std::vector<std::string>& lex, const NetworkObservations& obs) {
         std::size_t largest = std::max(obs.shape.num_samples, obs.shape.output_dim);
         for (std::size_t w : obs.shape.hidden_widths) {
             largest = std::max(largest, w);
         }
-        for (const std::string& token : lex) {
+        for (std::size_t i = 0; i < lex.size(); ++i) {
+            const std::string& token = lex[i];
             if (is_coordinate(token) && std::stoul(token.substr(1)) >= obs.shape.input_dim) {
                 return token + " exceeds input width " + std::to_string(obs.shape.input_dim);
             }
-            if (all_digits(token) && std::stoul(token) >= largest) {
+            if (all_digits(token) && !is_decimal_part(lex, i) && !before_count_noun(lex, i) &&
+                std::stoul(token) >= largest) {
                 return "index " + token + " exceeds every layer, output and sample count";
             }
         }
@@ -131,19 +151,22 @@ private:
                             layer.width - layer.always_active_units.size()});
         }
         const std::size_t drivers = obs.drivers.size();
+        std::set<std::string> named;
+        for (const std::string& token : lex) {
+            if (is_coordinate(token)) {
+                named.insert(token);
+            }
+        }
         allowed.insert({obs.shape.num_samples, obs.gating.closed_samples.size(), obs.gating.open_samples.size(),
                         obs.shape.output_dim, obs.shape.input_dim, drivers, obs.shape.input_dim - 1,
-                        obs.shape.input_dim - std::min(drivers, obs.shape.input_dim)});
-        static const std::set<std::string> nouns = {"units", "samples", "outputs", "coordinates", "inputs",
-                                                    "first-layer", "second-layer", "hidden"};
+                        obs.shape.input_dim - std::min(drivers, obs.shape.input_dim),
+                        obs.shape.input_dim - std::min(named.size(), obs.shape.input_dim)});
         for (std::size_t i = 0; i + 1 < lex.size(); ++i) {
             std::size_t value = 0;
-            if (all_digits(lex[i]) || !NumberWords::parse(lex[i], value) || negated(lex, i)) {
+            if (is_decimal_part(lex, i) || !NumberWords::parse(lex[i], value) || negated(lex, i)) {
                 continue;
             }
-            const bool before_noun = nouns.count(lex[i + 1]) > 0 ||
-                                     (i + 2 < lex.size() && lex[i + 1] != "of" && nouns.count(lex[i + 2]) > 0);
-            if (before_noun && allowed.count(value) == 0) {
+            if (before_count_noun(lex, i) && allowed.count(value) == 0) {
                 return "count \"" + lex[i] + "\" is not a size present in the telemetry";
             }
         }

@@ -1,0 +1,40 @@
+{
+  "count": 10000,
+  "train_count": 9000,
+  "eval_count": 1000,
+  "input_dim_range": [
+    6,
+    32
+  ],
+  "hidden_width_range": [
+    8,
+    48
+  ],
+  "output_dim_range": [
+    1,
+    8
+  ],
+  "batch_size_range": [
+    4,
+    16
+  ],
+  "pathologies": {
+    "rank_one": 1000,
+    "dead_corridor": 1000,
+    "halfspace_gate": 1000,
+    "feature_domination": 1000,
+    "range_attenuation": 1000,
+    "balanced_routing": 1000,
+    "two_axis_sheet": 1000,
+    "opposed_relu": 1000,
+    "saturated_readout": 1000,
+    "cluster_collapse": 1000
+  },
+  "schema": "Same top-level telemetry and ground_truth_targets shape as provided llm_train/llm_eval.",
+  "notes": [
+    "Synthetic numbers generated programmatically, not by an LLM and not from actual trained networks.",
+    "Descriptions refer to observed telemetry and known construction rules.",
+    "eigen_signs retained for compatibility, but are categorical synthetic signs, not measured eigenvalues.",
+    "Holdout split is deterministic: every tenth record goes into evaluation."
+  ]
+}
