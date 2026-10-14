@@ -1,0 +1,118 @@
+{
+  "config": {
+    "aux1_observation_weight": 0.3,
+    "aux2_eigen_sign_weight": 0.2,
+    "d_model": 256,
+    "dead_activation_threshold": 1e-06,
+    "decoder_dropout": 0.15,
+    "decoder_hidden_dim": 256,
+    "decoder_learning_rate": 0.001,
+    "decoder_output_weight_decay": 0.1,
+    "driver_correlation_threshold": 0.75,
+    "early_stopping_patience": 5,
+    "eigen_sign_dim": 4,
+    "flat_output_ratio": 0.2,
+    "max_field_tokens": 160,
+    "num_latents": 8,
+    "ray_tolerance": 0.001,
+    "spectral_rank_tolerance": 0.05
+  },
+  "dataset": {
+    "eval": {
+      "channel_tokens": [
+        21,
+        57
+      ],
+      "hidden_layers": [
+        1,
+        2
+      ],
+      "hidden_width": [
+        9,
+        24
+      ],
+      "input_dim": [
+        6,
+        16
+      ],
+      "output_dim": [
+        1,
+        4
+      ],
+      "rows": [
+        4,
+        8
+      ],
+      "sample_count": 10
+    },
+    "train": {
+      "channel_tokens": [
+        17,
+        68
+      ],
+      "hidden_layers": [
+        1,
+        2
+      ],
+      "hidden_width": [
+        6,
+        24
+      ],
+      "input_dim": [
+        6,
+        16
+      ],
+      "output_dim": [
+        1,
+        4
+      ],
+      "rows": [
+        4,
+        8
+      ],
+      "sample_count": 40
+    }
+  },
+  "files": {
+    "fields.csv": "one row per record and field: decoder consistency, first violation, tokens, F1",
+    "loss_history.csv": "per-epoch mean losses on the training records and on the held-out records",
+    "samples.csv": "one row per record: shape, word F1 (decoder / narrated / output), consistency, eigen-sign matches, descriptor mean absolute error",
+    "samples/": "one JSON per record with measured facts, aux targets vs predictions, all texts, latents"
+  },
+  "metrics": {
+    "eval": {
+      "decoder_consistent_fields": 19,
+      "eigen_sign_accuracy": 0.85,
+      "mean_decoder_f1": 0.4463740952818481,
+      "mean_descriptor_mae": 0.11607569151850958,
+      "mean_narrated_f1": 0.39290624835292043,
+      "mean_output_f1": 0.440102699414772,
+      "samples": 10,
+      "total_fields": 40
+    },
+    "train": {
+      "decoder_consistent_fields": 118,
+      "eigen_sign_accuracy": 0.86875,
+      "mean_decoder_f1": 0.5108206121562098,
+      "mean_descriptor_mae": 0.10152128641334097,
+      "mean_narrated_f1": 0.4175432224080192,
+      "mean_output_f1": 0.4873246933371257,
+      "samples": 40,
+      "total_fields": 160
+    }
+  },
+  "run": "run_20261013_233225",
+  "settings": {
+    "best_finetune_epoch": 15,
+    "encoder_learning_rate": 0.05,
+    "eval_path": "C:/Users/Cutie Magic 500/stevejob/stevejob/offline_models/forward_analysis/data/llm_eval.jsonl",
+    "finetune_epochs": 15,
+    "finetune_epochs_run": 15,
+    "pretrain_epochs": 40,
+    "seed": 20261013,
+    "stopped_early": false,
+    "train_path": "C:/Users/Cutie Magic 500/stevejob/stevejob/offline_models/forward_analysis/data/llm_train.jsonl",
+    "training_seconds": 36.7683772,
+    "vocabulary_size": 728
+  }
+}

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.20)
 project(native_engine LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -12,12 +12,37 @@ endif()
 find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
+find_package(Eigen3 3.3 QUIET NO_MODULE)
+if(NOT Eigen3_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        eigen3_headers
+        URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+        SOURCE_SUBDIR cmake_header_only_noop
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(eigen3_headers)
+    set(EIGEN3_INCLUDE_DIRS "${eigen3_headers_SOURCE_DIR}")
+    if(NOT TARGET Eigen3::Eigen)
+        add_library(Eigen3::Eigen INTERFACE IMPORTED)
+        set_target_properties(Eigen3::Eigen PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${EIGEN3_INCLUDE_DIRS}"
+        )
+    endif()
+endif()
+
 set(NATIVE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(FORWARD_ANALYSIS_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../offline_models/forward_analysis/include")
 set(NATIVE_ENGINE_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/../build/native")
 
 function(add_native_module target source)
     pybind11_add_module(${target} ${source})
-    target_include_directories(${target} PRIVATE "${NATIVE_INCLUDE}")
+    target_include_directories(${target} PRIVATE
+        "${NATIVE_INCLUDE}"
+        "${FORWARD_ANALYSIS_INCLUDE}"
+        ${EIGEN3_INCLUDE_DIRS}
+    )
+    target_link_libraries(${target} PRIVATE Eigen3::Eigen)
     if(WIN32)
         target_compile_definitions(${target} PRIVATE NOMINMAX _hypot=hypot)
     endif()
