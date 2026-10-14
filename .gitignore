@@ -13,5 +13,5 @@ local.settings.json
 .azurite/
 docs
 /reports
-
+offline_models/forward_analysis/data
 docs/scratch/
