@@ -1,8 +1,8 @@
 #pragma once
 
+#include "bottleneck_ae.hpp"
 #include "demo_scale_model.hpp"
-#include "stevejob/models/architectures/bottleneck_ae.hpp"
-#include "stevejob/models/architectures/mlp_regressor.hpp"
+#include "mlp_regressor.hpp"
 
 #include <utility>
 

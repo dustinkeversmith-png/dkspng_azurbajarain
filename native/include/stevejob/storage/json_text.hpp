@@ -33,6 +33,18 @@ struct JsonText {
         return value;
     }
 
+    const JsonText* find(const std::string& key) const {
+        if (kind != Kind::Object) {
+            return nullptr;
+        }
+        for (const auto& pair : object) {
+            if (pair.first == key) {
+                return &pair.second;
+            }
+        }
+        return nullptr;
+    }
+
 private:
     struct Parser {
         const std::string& raw;

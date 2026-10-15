@@ -129,6 +129,35 @@ public:
         return fields;
     }
 
+    static SchemaMap default_schema() {
+        SchemaMap schema;
+        schema.slot("weights", SlotShape::Matrix);
+        schema.slot("biases", SlotShape::Vector);
+        schema.summary(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
+        schema.summary(FieldSpec{"weight_mean", FieldSource::ParameterMean, "", false});
+        schema.summary(FieldSpec{"weight_min", FieldSource::ParameterMin, "", false});
+        schema.summary(FieldSpec{"weight_max", FieldSource::ParameterMax, "", false});
+        schema.receipt(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
+        schema.receipt(FieldSpec{"weight_mean", FieldSource::ParameterMean, "", true});
+        schema.receipt(FieldSpec{"weight_min", FieldSource::ParameterMin, "", true});
+        schema.receipt(FieldSpec{"weight_max", FieldSource::ParameterMax, "", true});
+        schema.receipt(FieldSpec{"output_count", FieldSource::OutputCount, "", false});
+        schema.receipt(FieldSpec{"output_mean", FieldSource::OutputMean, "", true});
+        schema.diagnostic(FieldSpec{"mean", FieldSource::LayerMean, "", false});
+        schema.diagnostic(FieldSpec{"variance", FieldSource::LayerVariance, "", false});
+        schema.diagnostic(FieldSpec{"max", FieldSource::LayerMax, "", false});
+        schema.diagnostic(FieldSpec{"min", FieldSource::LayerMin, "", false});
+        schema.diagnostic(FieldSpec{"total_elements", FieldSource::LayerCount, "", false});
+        schema.eval_input(EvalInput{"mean_squared_error", ValueKind::Number, "", 0});
+        schema.eval_input(EvalInput{"residuals", ValueKind::NumberList, "residuals", 0});
+        schema.eval_input(EvalInput{"anomalies", ValueKind::TextList, "anomalies", 80});
+        schema.eval_field(FieldSpec{"mean_squared_error", FieldSource::CopiedNumber, "mean_squared_error", false});
+        schema.eval_field(FieldSpec{"residual_count", FieldSource::ListCount, "residuals", false});
+        schema.eval_field(FieldSpec{"residuals", FieldSource::CopiedNumberList, "residuals", false});
+        schema.eval_field(FieldSpec{"anomalies", FieldSource::CopiedTextList, "anomalies", false});
+        return schema;
+    }
+
 private:
     struct ParameterRollup {
         std::size_t count = 0;
@@ -258,6 +287,8 @@ public:
 
     void add(std::string model_id, SchemaMap schema) { schemas_[std::move(model_id)] = std::move(schema); }
 
+    bool contains(const std::string& model_id) const { return schemas_.find(model_id) != schemas_.end(); }
+
     const SchemaMap& find(const std::string& model_id) const {
         const auto it = schemas_.find(model_id);
         if (it == schemas_.end()) {
@@ -266,94 +297,10 @@ public:
         return it->second;
     }
 
-    const SchemaMap& fallback() const { return schemas_.at("legacy_layers"); }
+    const SchemaMap& fallback() const { return schemas_.at("default"); }
 
 private:
-    CheckpointRegistry() { register_builtins(); }
-
-    static void legacy_parameters(SchemaMap& schema) {
-        schema.slot("weights", SlotShape::Matrix);
-        schema.slot("biases", SlotShape::Vector);
-    }
-
-    static void legacy_eval(SchemaMap& schema) {
-        schema.eval_input(EvalInput{"mean_squared_error", ValueKind::Number, "", 0});
-        schema.eval_input(EvalInput{"residuals", ValueKind::NumberList, "residuals", 0});
-        schema.eval_input(EvalInput{"anomalies", ValueKind::TextList, "anomalies", 80});
-        schema.eval_field(FieldSpec{"mean_squared_error", FieldSource::CopiedNumber, "mean_squared_error", false});
-        schema.eval_field(FieldSpec{"residual_count", FieldSource::ListCount, "residuals", false});
-        schema.eval_field(FieldSpec{"residuals", FieldSource::CopiedNumberList, "residuals", false});
-        schema.eval_field(FieldSpec{"anomalies", FieldSource::CopiedTextList, "anomalies", false});
-    }
-
-    static SchemaMap legacy_layers() {
-        SchemaMap schema;
-        legacy_parameters(schema);
-        schema.summary(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.summary(FieldSpec{"weight_mean", FieldSource::ParameterMean, "", false});
-        schema.summary(FieldSpec{"weight_min", FieldSource::ParameterMin, "", false});
-        schema.summary(FieldSpec{"weight_max", FieldSource::ParameterMax, "", false});
-        schema.receipt(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.receipt(FieldSpec{"weight_mean", FieldSource::ParameterMean, "", true});
-        schema.receipt(FieldSpec{"weight_min", FieldSource::ParameterMin, "", true});
-        schema.receipt(FieldSpec{"weight_max", FieldSource::ParameterMax, "", true});
-        schema.receipt(FieldSpec{"output_count", FieldSource::OutputCount, "", false});
-        schema.receipt(FieldSpec{"output_mean", FieldSource::OutputMean, "", true});
-        schema.diagnostic(FieldSpec{"mean", FieldSource::LayerMean, "", false});
-        schema.diagnostic(FieldSpec{"variance", FieldSource::LayerVariance, "", false});
-        schema.diagnostic(FieldSpec{"max", FieldSource::LayerMax, "", false});
-        schema.diagnostic(FieldSpec{"min", FieldSource::LayerMin, "", false});
-        schema.diagnostic(FieldSpec{"total_elements", FieldSource::LayerCount, "", false});
-        legacy_eval(schema);
-        return schema;
-    }
-
-    static SchemaMap regression_layers() {
-        SchemaMap schema;
-        legacy_parameters(schema);
-        schema.summary(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.summary(FieldSpec{"regression_weight_mean", FieldSource::ParameterMean, "", false});
-        schema.summary(FieldSpec{"regression_weight_variance", FieldSource::ParameterVariance, "", false});
-        schema.summary(FieldSpec{"regression_weight_max", FieldSource::ParameterMax, "", false});
-        schema.receipt(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.receipt(FieldSpec{"regression_weight_mean", FieldSource::ParameterMean, "", true});
-        schema.receipt(FieldSpec{"regression_weight_variance", FieldSource::ParameterVariance, "", true});
-        schema.receipt(FieldSpec{"output_count", FieldSource::OutputCount, "", false});
-        schema.receipt(FieldSpec{"output_mean", FieldSource::OutputMean, "", true});
-        schema.diagnostic(FieldSpec{"mean", FieldSource::LayerMean, "", false});
-        schema.diagnostic(FieldSpec{"variance", FieldSource::LayerVariance, "", false});
-        schema.diagnostic(FieldSpec{"regression_elements", FieldSource::LayerCount, "", false});
-        legacy_eval(schema);
-        return schema;
-    }
-
-    static SchemaMap reconstruction_layers() {
-        SchemaMap schema;
-        legacy_parameters(schema);
-        schema.summary(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.summary(FieldSpec{"reconstruction_weight_mean", FieldSource::ParameterMean, "", false});
-        schema.summary(FieldSpec{"reconstruction_weight_min", FieldSource::ParameterMin, "", false});
-        schema.summary(FieldSpec{"latent_peak", FieldSource::ParameterMax, "", false});
-        schema.receipt(FieldSpec{"parameter_count", FieldSource::ParameterCount, "", false});
-        schema.receipt(FieldSpec{"reconstruction_weight_mean", FieldSource::ParameterMean, "", true});
-        schema.receipt(FieldSpec{"output_count", FieldSource::OutputCount, "", false});
-        schema.receipt(FieldSpec{"reconstruction_output_mean", FieldSource::OutputMean, "", true});
-        schema.diagnostic(FieldSpec{"mean", FieldSource::LayerMean, "", false});
-        schema.diagnostic(FieldSpec{"latent_peak", FieldSource::LayerMax, "", false});
-        schema.diagnostic(FieldSpec{"latent_elements", FieldSource::LayerCount, "", false});
-        schema.eval_input(EvalInput{"reconstruction_loss", ValueKind::Number, "", 0});
-        schema.eval_input(EvalInput{"residuals", ValueKind::NumberList, "residuals", 0});
-        schema.eval_field(FieldSpec{"reconstruction_loss", FieldSource::CopiedNumber, "reconstruction_loss", false});
-        schema.eval_field(FieldSpec{"residual_count", FieldSource::ListCount, "residuals", false});
-        schema.eval_field(FieldSpec{"residuals", FieldSource::CopiedNumberList, "residuals", false});
-        return schema;
-    }
-
-    void register_builtins() {
-        add("legacy_layers", legacy_layers());
-        add("mlp_regressor", regression_layers());
-        add("bottleneck_ae", reconstruction_layers());
-    }
+    CheckpointRegistry() { add("default", SchemaMap::default_schema()); }
 
     std::map<std::string, SchemaMap> schemas_;
 };

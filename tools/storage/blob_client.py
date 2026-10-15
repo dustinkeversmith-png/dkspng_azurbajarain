@@ -5,15 +5,21 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from tools.core.config import MAX_ANOMALIES, MAX_BLOB_BYTES, MAX_PARAMETERS, MAX_RESIDUALS
 from tools.messaging.compressor import Compressor
 
 
 class BlobClient:
     """HMAC-SHA256 client for local Azurite or Azure Blob Storage."""
 
-    def __init__(self, transfer: Any | None = None) -> None:
+    def __init__(
+        self,
+        transfer: Any | None = None,
+        config: Any | None = None,
+        architecture: str = "mlp_regressor",
+    ) -> None:
         self._transfer = transfer
+        self._config = config
+        self._architecture = architecture
 
     def transfer(self):
         if self._transfer is None:
@@ -26,6 +32,19 @@ class BlobClient:
         from tools import tensor_engine
 
         return tensor_engine
+
+    def config(self, checkpoint_or_arch: dict[str, Any] | str | None = None):
+        if self._config is not None:
+            return self._config
+        arch = self._architecture
+        if isinstance(checkpoint_or_arch, str) and checkpoint_or_arch:
+            arch = checkpoint_or_arch
+        elif isinstance(checkpoint_or_arch, dict) and isinstance(checkpoint_or_arch.get("architecture"), str):
+            arch = checkpoint_or_arch["architecture"]
+        return self.engine().model_config(arch)
+
+    def set_config(self, config: Any) -> None:
+        self._config = config
 
     def connection_string(self) -> str:
         return os.environ.get("BLOB_STORAGE_CONNECTION", "UseDevelopmentStorage=true")
@@ -65,12 +84,14 @@ class BlobClient:
     def read_bytes(self, container: str, blob_name: str) -> bytes:
         self.ensure_container(container)
         payload = self.request("GET", f"/{container}/{blob_name}")
-        if len(payload) > MAX_BLOB_BYTES:
+        cfg = self.config()
+        if len(payload) > cfg.max_blob_bytes:
             raise ValueError(f"{container}/{blob_name} is too large for this tiny run")
         return payload
 
     def write_bytes(self, container: str, blob_name: str, payload: bytes, content_type: str) -> int:
-        if len(payload) > MAX_BLOB_BYTES:
+        cfg = self.config()
+        if len(payload) > cfg.max_blob_bytes:
             raise ValueError(f"{container}/{blob_name} would exceed the tiny-checkpoint size cap")
         self.ensure_container(container)
         self.request("PUT", f"/{container}/{blob_name}", body=payload, content_type=content_type)
@@ -87,13 +108,16 @@ class BlobClient:
         return self.write_bytes(container, blob_name, encoded, "application/json")
 
     def parameter_count(self, checkpoint: dict[str, Any]) -> int:
-        return int(self.engine().parameter_count(checkpoint, MAX_PARAMETERS))
+        cfg = self.config(checkpoint)
+        return int(self.engine().parameter_count(checkpoint, cfg.max_parameters))
 
     def summary(self, checkpoint: dict[str, Any]) -> dict[str, Any]:
-        return self.engine().checkpoint_summary(checkpoint, MAX_PARAMETERS)
+        cfg = self.config(checkpoint)
+        return self.engine().checkpoint_summary(checkpoint, cfg.max_parameters)
 
     def eval_summary(self, payload: dict[str, Any]) -> dict[str, Any]:
-        return self.engine().eval_summary(payload, MAX_RESIDUALS, MAX_ANOMALIES)
+        cfg = self.config(payload)
+        return self.engine().eval_summary(payload, cfg.max_residuals, cfg.max_anomalies)
 
     def read_model(self, blob_name: str) -> dict[str, Any]:
         return self.transfer().load_document(blob_name)["layers"]

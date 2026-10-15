@@ -1,22 +1,31 @@
 #pragma once
+#include "stevejob/core/config.hpp"
 #include "stevejob/core/metric_descriptor.hpp"
+#include "stevejob/math/linear_algebra.hpp"
+#include "stevejob/math/tensor_stats.hpp"
 #include "stevejob/models/candidate_scheme.hpp"
+#include "stevejob/models/checkpoint_registry.hpp"
 #include "stevejob/models/evaluation_score.hpp"
 #include "stevejob/models/neural_network.hpp"
 #include "stevejob/messaging/container_scheme.hpp"
 #include "stevejob/messaging/encoding_scheme.hpp"
 #include "stevejob/messaging/output_scheme.hpp"
-#include "stevejob/messaging/totr_engine.hpp"
 #include "stevejob/models/eval_scheme.hpp"
 #include "stevejob/models/journal_spec.hpp"
 #include "stevejob/models/slice_scheme.hpp"
+#include "stevejob/storage/json_text.hpp"
 #include "stevejob/storage/metric_fields.hpp"
 
+#include <cmath>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace stevejob::models {
+
+using LearningConfig = stevejob::config::LearningConfig;
 
 struct ModelDirective {
     std::string task;
@@ -38,6 +47,10 @@ struct TelemetrySignal {
 class ModelTemplate {
 public:
     virtual ~ModelTemplate() = default;
+
+    const LearningConfig& config() const { return config_; }
+    LearningConfig& config() { return config_; }
+    void set_config(const LearningConfig& cfg) { config_ = cfg; }
 
     virtual NeuralNetwork& network() = 0;
     virtual const NeuralNetwork& network() const = 0;
@@ -78,6 +91,96 @@ public:
     virtual storage::JournalRecord seed_record(const ModelEvaluation& score, const std::string& checksum) const = 0;
 
     virtual storage::JournalRecord trial_record(const TrialNote& note) const = 0;
+
+    virtual SchemaMap checkpoint_schema() const { return SchemaMap::default_schema(); }
+
+    virtual math::TensorStats compute_layer_stats(const std::vector<std::vector<double>>& matrix) const {
+        return math::TensorStats::from_matrix(matrix);
+    }
+
+    virtual std::vector<FieldValue> layer_diagnostic_fields(const std::vector<std::vector<double>>& matrix) const {
+        const math::TensorStats stats = compute_layer_stats(matrix);
+        return checkpoint_schema().compile_diagnostics(
+            stats.mean(), stats.variance(), stats.min_val(), stats.max_val(), stats.count());
+    }
+
+    virtual double validate_dampening(double value) const {
+        if (!std::isfinite(value) || value < config_.min_dampening || value > config_.max_dampening) {
+            std::ostringstream msg;
+            msg << "dampening must be in [" << config_.min_dampening << ", " << config_.max_dampening << "]";
+            throw std::invalid_argument(msg.str());
+        }
+        return value;
+    }
+
+    virtual double parse_dampening_text(const std::string& raw) const {
+        const std::string trimmed = trim_ws(raw);
+        if (trimmed.empty()) {
+            return 1.0;
+        }
+        try {
+            std::size_t idx = 0;
+            const double direct = std::stod(trimmed, &idx);
+            if (idx == trimmed.size()) {
+                return validate_dampening(direct);
+            }
+        } catch (const std::exception&) {
+        }
+        const storage::JsonText parsed = extract_json_object(trimmed, "dampening response");
+        const storage::JsonText* field = parsed.find("dampening");
+        if (field == nullptr || field->kind != storage::JsonText::Kind::Number) {
+            throw std::invalid_argument("dampening must be a number");
+        }
+        return validate_dampening(field->number);
+    }
+
+    virtual double validate_learning_rate(double lr) const {
+        if (!std::isfinite(lr) || lr <= 0.0 || lr > config_.max_learning_rate) {
+            std::ostringstream msg;
+            msg << "learning_rate must be in (0, " << config_.max_learning_rate << "]";
+            throw std::invalid_argument(msg.str());
+        }
+        return lr;
+    }
+
+    virtual double validate_weight_decay(double decay) const {
+        if (!std::isfinite(decay) || decay < 0.0 || decay > 1.0) {
+            throw std::invalid_argument("weight_decay must be in [0, 1]");
+        }
+        return decay;
+    }
+
+    virtual storage::JsonText parse_gradients_text(const std::string& raw) const {
+        const storage::JsonText parsed = extract_json_object(raw, "gradient response");
+        const storage::JsonText* inner = parsed.find("gradients");
+        if (inner != nullptr && inner->kind == storage::JsonText::Kind::Object) {
+            return *inner;
+        }
+        return parsed;
+    }
+
+    virtual void validate_inputs(const std::vector<std::vector<double>>& inputs) const {
+        const std::size_t max_rows = config_.max_input_rows;
+        const std::size_t max_cols = config_.max_input_cols;
+        const std::string message = "inputs must be 1 to " + std::to_string(max_rows) + " samples with at most " +
+                                    std::to_string(max_cols) + " features";
+        if (inputs.empty() || inputs.size() > max_rows) {
+            throw std::invalid_argument(message);
+        }
+        for (const auto& row : inputs) {
+            if (row.size() > max_cols) {
+                throw std::invalid_argument(message);
+            }
+        }
+    }
+
+    virtual std::vector<std::vector<double>> evaluate_layer_inputs(
+        const std::vector<std::vector<double>>& inputs,
+        const std::vector<std::vector<double>>& weights,
+        const std::vector<double>& biases) const {
+        validate_inputs(inputs);
+        return math::linear_outputs(inputs, weights, biases);
+    }
 
     virtual CheckpointDocument checkpoint_document(const ModelEvaluation& score, const std::string& checksum) const {
         CheckpointDocument document;
@@ -124,8 +227,45 @@ public:
         network().patch_slice(slice.slice_id, block, bias);
     }
 
+    static storage::JsonText extract_json_object(const std::string& raw, const std::string& label) {
+        const std::string trimmed = trim_ws(raw);
+        if (trimmed.empty()) {
+            throw std::invalid_argument(label + " did not contain a JSON object");
+        }
+        try {
+            const storage::JsonText direct = storage::JsonText::parse(trimmed);
+            if (direct.kind == storage::JsonText::Kind::Object) {
+                return direct;
+            }
+        } catch (const std::exception&) {
+        }
+        const std::size_t start = trimmed.find('{');
+        const std::size_t end = trimmed.rfind('}');
+        if (start == std::string::npos || end == std::string::npos || end <= start) {
+            throw std::invalid_argument(label + " did not contain a JSON object");
+        }
+        const storage::JsonText sliced = storage::JsonText::parse(trimmed.substr(start, end - start + 1));
+        if (sliced.kind != storage::JsonText::Kind::Object) {
+            throw std::invalid_argument(label + " must be a JSON object");
+        }
+        return sliced;
+    }
+
+protected:
+    LearningConfig config_{};
+
 private:
+    static std::string trim_ws(const std::string& s) {
+        const std::size_t first = s.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos) {
+            return "";
+        }
+        const std::size_t last = s.find_last_not_of(" \t\r\n");
+        return s.substr(first, last - first + 1);
+    }
+
     storage::SlidingJournal journal_{1};
 };
 
 }  // namespace stevejob::models
+

@@ -5,12 +5,12 @@ Core Tools Version:       4.15.2+007886fd6e869a96595c7fd7788d90397588725b (64-bi
 Function Runtime Version: 4.1053.200.26403
 
 Skipping 'languageWorkers:python:defaultExecutablePath' from local settings as it's already defined in current environment variables.
-[2026-10-13T17:27:34.856Z] Durable Functions Distributed Tracing V2 is GA now! Learn how to enable the feature by visiting aka.ms/durable-distributed-tracing. To disable this message, you can configure distributedTracingEnabled to "true" and version to "V2" or "None". Setting it to "None" would in effect disable the feature.
-[2026-10-13T17:27:35.102Z] INFO:     Started server process [31104]
-[2026-10-13T17:27:35.102Z] INFO:     Waiting for application startup.
-[2026-10-13T17:27:35.102Z] INFO:     Application startup complete.
-[2026-10-13T17:27:35.102Z] INFO:     Uvicorn running on http://127.0.0.1:50669 (Press CTRL+C to quit)
-[2026-10-13T17:27:35.158Z] Worker process started and initialized.
+[2026-10-15T20:44:36.047Z] Durable Functions Distributed Tracing V2 is GA now! Learn how to enable the feature by visiting aka.ms/durable-distributed-tracing. To disable this message, you can configure distributedTracingEnabled to "true" and version to "V2" or "None". Setting it to "None" would in effect disable the feature.
+[2026-10-15T20:44:36.309Z] INFO:     Started server process [1900]
+[2026-10-15T20:44:36.309Z] INFO:     Waiting for application startup.
+[2026-10-15T20:44:36.309Z] INFO:     Application startup complete.
+[2026-10-15T20:44:36.309Z] INFO:     Uvicorn running on http://127.0.0.1:50390 (Press CTRL+C to quit)
+[2026-10-15T20:44:36.363Z] Worker process started and initialized.
 
 Functions:
 
@@ -47,488 +47,488 @@ Functions:
 	optimize_network_orchestrator: orchestrationTrigger
 
 For detailed output, run func with --verbose flag.
-[2026-10-13T17:27:40.141Z] Host lock lease acquired by instance ID '00000000000000000000000055312500'.
-[2026-10-13T17:27:42.931Z] Executing 'Functions.start_optimize_loop' (Reason='This function was programmatically called via the host APIs.', Id=7d76500a-7fd6-42d9-8e8f-bdd8ee1be4c6)
-[2026-10-13T17:27:43.012Z] 2026-10-13 10:27:43.012 durabletask-async_client INFO: Starting new 'modular_model_orchestrator' instance with ID = '5447d4dab29a47efb00da15ca0c4232f'.
-[2026-10-13T17:27:43.176Z] INFO:     127.0.0.1:0 - "POST /api/orchestrators/modular_model_orchestrator HTTP/1.1" 202 Accepted
-[2026-10-13T17:27:43.198Z] Executed 'Functions.start_optimize_loop' (Succeeded, Id=7d76500a-7fd6-42d9-8e8f-bdd8ee1be4c6, Duration=290ms)
-[2026-10-13T17:27:43.252Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=5664f627-b956-4e3b-a34a-04c7b9298110)
-[2026-10-13T17:27:43.256Z] 2026-10-13 10:27:43.256 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator <unknown> yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:43.266Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=5664f627-b956-4e3b-a34a-04c7b9298110, Duration=31ms)
-[2026-10-13T17:27:43.291Z] Executing 'Functions.activity_gateway_read_meta' (Reason='(null)', Id=55c83176-5918-4e1c-9d4e-b24fd83689da)
-[2026-10-13T17:27:43.311Z] Executed 'Functions.activity_gateway_read_meta' (Succeeded, Id=55c83176-5918-4e1c-9d4e-b24fd83689da, Duration=21ms)
-[2026-10-13T17:27:43.346Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b2dba9cc-8a32-4e8b-afc5-2c8c3b7626b2)
-[2026-10-13T17:27:43.348Z] 2026-10-13 10:27:43.347 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:43.348Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b2dba9cc-8a32-4e8b-afc5-2c8c3b7626b2, Duration=5ms)
-[2026-10-13T17:27:43.355Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=8a309575-1331-4f15-bf22-1bd88b12f3e3)
-[2026-10-13T17:27:43.362Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=8a309575-1331-4f15-bf22-1bd88b12f3e3, Duration=7ms)
-[2026-10-13T17:27:43.373Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=81a7df86-d7c2-4194-a978-87731ddab835)
-[2026-10-13T17:27:43.377Z] 2026-10-13 10:27:43.377 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:43.378Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=81a7df86-d7c2-4194-a978-87731ddab835, Duration=4ms)
-[2026-10-13T17:27:43.384Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=3a4090d4-82c8-4297-977e-a838266d0a5a)
-[2026-10-13T17:27:43.393Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=3a4090d4-82c8-4297-977e-a838266d0a5a, Duration=9ms)
-[2026-10-13T17:27:43.407Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2c85ac79-2f08-42ee-a030-e8507de318d2)
-[2026-10-13T17:27:43.409Z] 2026-10-13 10:27:43.409 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:43.410Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2c85ac79-2f08-42ee-a030-e8507de318d2, Duration=3ms)
-[2026-10-13T17:27:43.420Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=6ef28d61-02a5-4fac-abac-d4a8595fc2fd)
-[2026-10-13T17:27:48.433Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172748Z_trial_layer1_r0c0_attempt_1.md
-[2026-10-13T17:27:48.433Z] [tokens] prompt=1315 completion=312 total=1627 mutation_failed=False
-[2026-10-13T17:27:48.434Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=6ef28d61-02a5-4fac-abac-d4a8595fc2fd, Duration=5013ms)
-[2026-10-13T17:27:48.444Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=de1eda2b-51ef-4fd2-9714-9a5e65b7f123)
-[2026-10-13T17:27:48.446Z] 2026-10-13 10:27:48.446 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:48.447Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=de1eda2b-51ef-4fd2-9714-9a5e65b7f123, Duration=3ms)
-[2026-10-13T17:27:48.454Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=156a8a55-d868-4633-ae16-febebbcb9c09)
-[2026-10-13T17:27:48.474Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172748Z_decision_layer1_r0c0.md
-[2026-10-13T17:27:48.475Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=156a8a55-d868-4633-ae16-febebbcb9c09, Duration=20ms)
-[2026-10-13T17:27:48.483Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c9f48495-b929-4dc3-9633-90d435caa6d1)
-[2026-10-13T17:27:48.484Z] 2026-10-13 10:27:48.484 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:48.485Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c9f48495-b929-4dc3-9633-90d435caa6d1, Duration=3ms)
-[2026-10-13T17:27:48.493Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=3ea8d215-dbf4-45b8-a595-e33e4e588ea2)
-[2026-10-13T17:27:48.499Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=3ea8d215-dbf4-45b8-a595-e33e4e588ea2, Duration=6ms)
-[2026-10-13T17:27:48.507Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b98f3d85-880a-4909-9ab5-ce70067f6535)
-[2026-10-13T17:27:48.510Z] 2026-10-13 10:27:48.509 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:48.510Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b98f3d85-880a-4909-9ab5-ce70067f6535, Duration=3ms)
-[2026-10-13T17:27:48.516Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=9e6571df-39a7-4936-9c49-1ee2f2489d36)
-[2026-10-13T17:27:48.526Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=9e6571df-39a7-4936-9c49-1ee2f2489d36, Duration=9ms)
-[2026-10-13T17:27:48.535Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a5913b98-727f-48ed-b6b3-c5f5dd2cff1d)
-[2026-10-13T17:27:48.537Z] 2026-10-13 10:27:48.537 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:48.538Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a5913b98-727f-48ed-b6b3-c5f5dd2cff1d, Duration=3ms)
-[2026-10-13T17:27:48.545Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=3c661f13-ef57-4c46-a770-742cc0551bd7)
-[2026-10-13T17:27:52.275Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172752Z_trial_layer1_r0c1_attempt_1.md
-[2026-10-13T17:27:52.275Z] [tokens] prompt=1403 completion=279 total=1682 mutation_failed=False
-[2026-10-13T17:27:52.275Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=3c661f13-ef57-4c46-a770-742cc0551bd7, Duration=3730ms)
-[2026-10-13T17:27:52.286Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=af704ab6-3b3e-41d0-9bca-16ed292c0408)
-[2026-10-13T17:27:52.289Z] 2026-10-13 10:27:52.288 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:52.290Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=af704ab6-3b3e-41d0-9bca-16ed292c0408, Duration=4ms)
-[2026-10-13T17:27:52.296Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=fd4cbcc1-c7d3-427b-a62a-6495ef2d6ad9)
-[2026-10-13T17:27:52.313Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172752Z_decision_layer1_r0c1.md
-[2026-10-13T17:27:52.313Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=fd4cbcc1-c7d3-427b-a62a-6495ef2d6ad9, Duration=17ms)
-[2026-10-13T17:27:52.322Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=aa53056d-6555-4698-bbb3-e8d836a02e07)
-[2026-10-13T17:27:52.325Z] 2026-10-13 10:27:52.325 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:52.326Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=aa53056d-6555-4698-bbb3-e8d836a02e07, Duration=3ms)
-[2026-10-13T17:27:52.332Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=2840b9f4-6f7d-42c6-b472-b51cfe3cae32)
-[2026-10-13T17:27:52.339Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=2840b9f4-6f7d-42c6-b472-b51cfe3cae32, Duration=7ms)
-[2026-10-13T17:27:52.348Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=4995314d-05da-489e-bd7e-f630a7c289e0)
-[2026-10-13T17:27:52.350Z] 2026-10-13 10:27:52.350 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:52.351Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=4995314d-05da-489e-bd7e-f630a7c289e0, Duration=3ms)
-[2026-10-13T17:27:52.358Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=eeece8e3-d564-4a95-a72e-9007327e3c37)
-[2026-10-13T17:27:52.368Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=eeece8e3-d564-4a95-a72e-9007327e3c37, Duration=10ms)
-[2026-10-13T17:27:52.378Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=93f5d3f8-46d9-442e-b4f0-5da9afa7fa35)
-[2026-10-13T17:27:52.381Z] 2026-10-13 10:27:52.381 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:52.382Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=93f5d3f8-46d9-442e-b4f0-5da9afa7fa35, Duration=4ms)
-[2026-10-13T17:27:52.389Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=bafc30b9-cb76-4527-b0bb-3f0555755286)
-[2026-10-13T17:27:56.093Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172756Z_trial_layer2_r0c0_attempt_1.md
-[2026-10-13T17:27:56.093Z] [tokens] prompt=1446 completion=295 total=1741 mutation_failed=False
-[2026-10-13T17:27:56.093Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=bafc30b9-cb76-4527-b0bb-3f0555755286, Duration=3704ms)
-[2026-10-13T17:27:56.103Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=61ad79c9-264f-421a-b191-b0680946099d)
-[2026-10-13T17:27:56.106Z] 2026-10-13 10:27:56.106 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:56.107Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=61ad79c9-264f-421a-b191-b0680946099d, Duration=4ms)
-[2026-10-13T17:27:56.113Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=63f3f306-c4ef-47d9-b1af-e6e11ad2ff43)
-[2026-10-13T17:27:56.128Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172756Z_decision_layer2_r0c0.md
-[2026-10-13T17:27:56.128Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=63f3f306-c4ef-47d9-b1af-e6e11ad2ff43, Duration=15ms)
-[2026-10-13T17:27:56.136Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=abaa99d2-d05d-49f6-8776-0747db639c0e)
-[2026-10-13T17:27:56.139Z] 2026-10-13 10:27:56.139 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:56.140Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=abaa99d2-d05d-49f6-8776-0747db639c0e, Duration=3ms)
-[2026-10-13T17:27:56.148Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=c578463e-eca8-4bb7-9f6a-173bbc6fe161)
-[2026-10-13T17:27:56.154Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=c578463e-eca8-4bb7-9f6a-173bbc6fe161, Duration=6ms)
-[2026-10-13T17:27:56.163Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ac734253-19b8-470f-864f-ffa7b0be565f)
-[2026-10-13T17:27:56.169Z] 2026-10-13 10:27:56.168 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:56.170Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ac734253-19b8-470f-864f-ffa7b0be565f, Duration=7ms)
-[2026-10-13T17:27:56.176Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=bb31b424-16c7-48e8-95f8-b9c4a85ad294)
-[2026-10-13T17:27:56.186Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=bb31b424-16c7-48e8-95f8-b9c4a85ad294, Duration=9ms)
-[2026-10-13T17:27:56.194Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2bd282e9-695a-45f4-b876-4cfcc290bd99)
-[2026-10-13T17:27:56.197Z] 2026-10-13 10:27:56.197 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:56.198Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2bd282e9-695a-45f4-b876-4cfcc290bd99, Duration=3ms)
-[2026-10-13T17:27:56.204Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=d08d65de-ae40-494c-8247-ff1b92365759)
-[2026-10-13T17:27:59.983Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172759Z_trial_layer2_r1c0_attempt_1.md
-[2026-10-13T17:27:59.983Z] [tokens] prompt=1428 completion=303 total=1731 mutation_failed=False
-[2026-10-13T17:27:59.984Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=d08d65de-ae40-494c-8247-ff1b92365759, Duration=3779ms)
-[2026-10-13T17:27:59.994Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c72cb66a-a95e-49c9-a04f-c6d63199d098)
-[2026-10-13T17:27:59.997Z] 2026-10-13 10:27:59.996 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:27:59.997Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c72cb66a-a95e-49c9-a04f-c6d63199d098, Duration=3ms)
-[2026-10-13T17:28:00.003Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=f3aa1a0f-d609-4b0c-bd83-91327dcaf9fe)
-[2026-10-13T17:28:00.019Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172800Z_decision_layer2_r1c0.md
-[2026-10-13T17:28:00.019Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=f3aa1a0f-d609-4b0c-bd83-91327dcaf9fe, Duration=16ms)
-[2026-10-13T17:28:00.029Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=5dfeefe4-6249-4bad-8841-9c39c43853eb)
-[2026-10-13T17:28:00.031Z] 2026-10-13 10:28:00.031 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:00.032Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=5dfeefe4-6249-4bad-8841-9c39c43853eb, Duration=3ms)
-[2026-10-13T17:28:00.037Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=2c4c563a-48ab-44e3-a24d-e90e51f185f8)
-[2026-10-13T17:28:00.043Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=2c4c563a-48ab-44e3-a24d-e90e51f185f8, Duration=5ms)
-[2026-10-13T17:28:00.054Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ea535c34-bdf4-4635-bba2-d6416686ab5f)
-[2026-10-13T17:28:00.057Z] 2026-10-13 10:28:00.057 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:00.060Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ea535c34-bdf4-4635-bba2-d6416686ab5f, Duration=5ms)
-[2026-10-13T17:28:00.066Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=04793bf3-78da-4f19-971d-b7480ab48803)
-[2026-10-13T17:28:00.076Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=04793bf3-78da-4f19-971d-b7480ab48803, Duration=9ms)
-[2026-10-13T17:28:00.084Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d820d6d9-df36-4583-ba65-249b45dc3c19)
-[2026-10-13T17:28:00.088Z] 2026-10-13 10:28:00.087 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:00.089Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d820d6d9-df36-4583-ba65-249b45dc3c19, Duration=4ms)
-[2026-10-13T17:28:00.095Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=326b2162-4d00-423c-8959-6318514fa738)
-[2026-10-13T17:28:03.170Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172803Z_trial_head_attempt_1.md
-[2026-10-13T17:28:03.170Z] [tokens] prompt=1358 completion=243 total=1601 mutation_failed=False
-[2026-10-13T17:28:03.171Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=326b2162-4d00-423c-8959-6318514fa738, Duration=3075ms)
-[2026-10-13T17:28:03.181Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1da8874b-a4d7-4bb0-95b9-20c00ca36f1d)
-[2026-10-13T17:28:03.184Z] 2026-10-13 10:28:03.184 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:03.185Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1da8874b-a4d7-4bb0-95b9-20c00ca36f1d, Duration=4ms)
-[2026-10-13T17:28:03.191Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=b33c3c7b-b6ba-4ae1-8693-3646ac1830d7)
-[2026-10-13T17:28:03.211Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172803Z_decision_head.md
-[2026-10-13T17:28:03.211Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=b33c3c7b-b6ba-4ae1-8693-3646ac1830d7, Duration=20ms)
-[2026-10-13T17:28:03.220Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=21b61179-333c-467b-a6cb-74a0715a3a2c)
-[2026-10-13T17:28:03.223Z] 2026-10-13 10:28:03.223 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:03.224Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=21b61179-333c-467b-a6cb-74a0715a3a2c, Duration=4ms)
-[2026-10-13T17:28:03.229Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=7b2911fe-196a-4fdb-8023-adf7b5a5a5a5)
-[2026-10-13T17:28:03.234Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=7b2911fe-196a-4fdb-8023-adf7b5a5a5a5, Duration=5ms)
-[2026-10-13T17:28:03.251Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=208a4404-a4e2-4ab5-aa0a-91c570e447cf)
-[2026-10-13T17:28:03.254Z] 2026-10-13 10:28:03.254 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:03.255Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=208a4404-a4e2-4ab5-aa0a-91c570e447cf, Duration=4ms)
-[2026-10-13T17:28:03.261Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=beada278-4771-44df-8ea4-ac07c1adc44e)
-[2026-10-13T17:28:03.270Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=beada278-4771-44df-8ea4-ac07c1adc44e, Duration=8ms)
-[2026-10-13T17:28:03.279Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=84c3ae0d-0d9e-4081-b8a5-8af42a0c18c8)
-[2026-10-13T17:28:03.282Z] 2026-10-13 10:28:03.281 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:03.283Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=84c3ae0d-0d9e-4081-b8a5-8af42a0c18c8, Duration=4ms)
-[2026-10-13T17:28:03.289Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=2243989a-6a62-4874-bf5a-7ba7d5bdc4ce)
-[2026-10-13T17:28:06.304Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172806Z_trial_layer1_r0c0_attempt_1.md
-[2026-10-13T17:28:06.305Z] [tokens] prompt=1414 completion=295 total=1709 mutation_failed=False
-[2026-10-13T17:28:06.305Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=2243989a-6a62-4874-bf5a-7ba7d5bdc4ce, Duration=3016ms)
-[2026-10-13T17:28:06.317Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=35ba3c0e-c665-4cd0-985e-1f26bb695688)
-[2026-10-13T17:28:06.322Z] 2026-10-13 10:28:06.322 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:06.323Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=35ba3c0e-c665-4cd0-985e-1f26bb695688, Duration=6ms)
-[2026-10-13T17:28:06.330Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=74ba8f50-2ee7-48c1-8ad3-bd4c881a1167)
-[2026-10-13T17:28:06.351Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172806Z_decision_layer1_r0c0.md
-[2026-10-13T17:28:06.352Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=74ba8f50-2ee7-48c1-8ad3-bd4c881a1167, Duration=21ms)
-[2026-10-13T17:28:06.363Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=09c52663-9915-4637-b525-64de8bad8357)
-[2026-10-13T17:28:06.366Z] 2026-10-13 10:28:06.366 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:06.367Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=09c52663-9915-4637-b525-64de8bad8357, Duration=4ms)
-[2026-10-13T17:28:06.373Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=81c792a5-d440-4a8f-b197-78b2a82eabba)
-[2026-10-13T17:28:06.380Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=81c792a5-d440-4a8f-b197-78b2a82eabba, Duration=6ms)
-[2026-10-13T17:28:06.389Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2c49cdf9-9be0-4947-83b9-70f970510e91)
-[2026-10-13T17:28:06.393Z] 2026-10-13 10:28:06.393 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:06.394Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2c49cdf9-9be0-4947-83b9-70f970510e91, Duration=4ms)
-[2026-10-13T17:28:06.399Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=682a5d2d-8b34-4098-84af-7e04c2b5aea9)
-[2026-10-13T17:28:06.409Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=682a5d2d-8b34-4098-84af-7e04c2b5aea9, Duration=10ms)
-[2026-10-13T17:28:06.420Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7380f5d5-7d5d-4f65-b2f3-53074a8adbee)
-[2026-10-13T17:28:06.423Z] 2026-10-13 10:28:06.423 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:06.424Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7380f5d5-7d5d-4f65-b2f3-53074a8adbee, Duration=4ms)
-[2026-10-13T17:28:06.432Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=f6140949-e8a8-4673-9e3b-d5dbf456626b)
-[2026-10-13T17:28:10.216Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172810Z_trial_layer1_r0c1_attempt_1.md
-[2026-10-13T17:28:10.216Z] [tokens] prompt=1431 completion=296 total=1727 mutation_failed=False
-[2026-10-13T17:28:10.217Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=f6140949-e8a8-4673-9e3b-d5dbf456626b, Duration=3785ms)
-[2026-10-13T17:28:10.230Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c34bfc8c-b3ac-47d3-b328-40adf9c1c820)
-[2026-10-13T17:28:10.234Z] 2026-10-13 10:28:10.234 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:10.235Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c34bfc8c-b3ac-47d3-b328-40adf9c1c820, Duration=5ms)
-[2026-10-13T17:28:10.243Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=3c03a6b3-9324-4862-bdb9-352d5ddcdf9e)
-[2026-10-13T17:28:10.262Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172810Z_decision_layer1_r0c1.md
-[2026-10-13T17:28:10.262Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=3c03a6b3-9324-4862-bdb9-352d5ddcdf9e, Duration=19ms)
-[2026-10-13T17:28:10.275Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c0ae3964-aa2c-4b13-b749-f79c99cd5945)
-[2026-10-13T17:28:10.279Z] 2026-10-13 10:28:10.279 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:10.280Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c0ae3964-aa2c-4b13-b749-f79c99cd5945, Duration=7ms)
-[2026-10-13T17:28:10.287Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=1be8eb03-48c5-4020-a5e5-d5cdf01adad8)
-[2026-10-13T17:28:10.293Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=1be8eb03-48c5-4020-a5e5-d5cdf01adad8, Duration=6ms)
-[2026-10-13T17:28:10.303Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=57881f2a-96b7-44dd-b100-3c4d61ba655d)
-[2026-10-13T17:28:10.306Z] 2026-10-13 10:28:10.306 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:10.307Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=57881f2a-96b7-44dd-b100-3c4d61ba655d, Duration=4ms)
-[2026-10-13T17:28:10.314Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=1448e45b-a53a-4e3e-b957-30e99cb052a0)
-[2026-10-13T17:28:10.325Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=1448e45b-a53a-4e3e-b957-30e99cb052a0, Duration=11ms)
-[2026-10-13T17:28:10.336Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=47b001af-f749-4146-a474-7bd41ed0e5c1)
-[2026-10-13T17:28:10.341Z] 2026-10-13 10:28:10.341 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:10.342Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=47b001af-f749-4146-a474-7bd41ed0e5c1, Duration=7ms)
-[2026-10-13T17:28:10.348Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=864f7b9f-ba69-49a8-a1e4-5d32683a0a39)
-[2026-10-13T17:28:14.306Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172814Z_trial_layer2_r0c0_attempt_1.md
-[2026-10-13T17:28:14.306Z] [tokens] prompt=1466 completion=303 total=1769 mutation_failed=False
-[2026-10-13T17:28:14.306Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=864f7b9f-ba69-49a8-a1e4-5d32683a0a39, Duration=3958ms)
-[2026-10-13T17:28:14.321Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d08073a9-378d-497d-8a32-34ea2933665a)
-[2026-10-13T17:28:14.325Z] 2026-10-13 10:28:14.325 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:14.326Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d08073a9-378d-497d-8a32-34ea2933665a, Duration=5ms)
-[2026-10-13T17:28:14.333Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=344ecf30-3327-44ea-9ce7-b83dc35cf35d)
-[2026-10-13T17:28:14.355Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172814Z_decision_layer2_r0c0.md
-[2026-10-13T17:28:14.355Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=344ecf30-3327-44ea-9ce7-b83dc35cf35d, Duration=22ms)
-[2026-10-13T17:28:14.382Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=4d1bad6d-5fa7-4c50-a390-99542a5c26ca)
-[2026-10-13T17:28:14.388Z] 2026-10-13 10:28:14.388 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:14.389Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=4d1bad6d-5fa7-4c50-a390-99542a5c26ca, Duration=8ms)
-[2026-10-13T17:28:14.395Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=46ce2649-1aaa-429b-973f-c55b8a57ee81)
-[2026-10-13T17:28:14.402Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=46ce2649-1aaa-429b-973f-c55b8a57ee81, Duration=6ms)
-[2026-10-13T17:28:14.413Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=cc3ac36b-0e50-498f-b954-346fa9fa53a5)
-[2026-10-13T17:28:14.426Z] 2026-10-13 10:28:14.426 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:14.428Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=cc3ac36b-0e50-498f-b954-346fa9fa53a5, Duration=15ms)
-[2026-10-13T17:28:14.436Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=597f97c8-b04e-4f4c-97f4-ecad98047900)
-[2026-10-13T17:28:14.447Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=597f97c8-b04e-4f4c-97f4-ecad98047900, Duration=11ms)
-[2026-10-13T17:28:14.460Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a1f35a4a-6bc3-4f94-ab33-20ff5242da8d)
-[2026-10-13T17:28:14.466Z] 2026-10-13 10:28:14.466 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:14.467Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a1f35a4a-6bc3-4f94-ab33-20ff5242da8d, Duration=7ms)
-[2026-10-13T17:28:14.473Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=1a6b12cc-3d47-46b4-96a2-40b7cea14970)
-[2026-10-13T17:28:17.651Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172817Z_trial_layer2_r1c0_attempt_1.md
-[2026-10-13T17:28:17.651Z] [tokens] prompt=1443 completion=303 total=1746 mutation_failed=False
-[2026-10-13T17:28:17.651Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=1a6b12cc-3d47-46b4-96a2-40b7cea14970, Duration=3178ms)
-[2026-10-13T17:28:17.665Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=38f2e8dd-4361-41f1-a2d7-901698cd926c)
-[2026-10-13T17:28:17.670Z] 2026-10-13 10:28:17.669 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:17.671Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=38f2e8dd-4361-41f1-a2d7-901698cd926c, Duration=5ms)
-[2026-10-13T17:28:17.677Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=152b5d54-3bbf-4435-bf22-c0250410bcdf)
-[2026-10-13T17:28:17.694Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172817Z_decision_layer2_r1c0.md
-[2026-10-13T17:28:17.694Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=152b5d54-3bbf-4435-bf22-c0250410bcdf, Duration=16ms)
-[2026-10-13T17:28:17.705Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=bc100f32-8af6-4344-910c-1a88a133c32e)
-[2026-10-13T17:28:17.709Z] 2026-10-13 10:28:17.709 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:17.710Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=bc100f32-8af6-4344-910c-1a88a133c32e, Duration=5ms)
-[2026-10-13T17:28:17.715Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=94d75785-e79c-43db-8ad4-a735fd38bdf1)
-[2026-10-13T17:28:17.722Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=94d75785-e79c-43db-8ad4-a735fd38bdf1, Duration=6ms)
-[2026-10-13T17:28:17.732Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9b755ca6-123e-4184-9387-351d2c1f23ff)
-[2026-10-13T17:28:17.736Z] 2026-10-13 10:28:17.736 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:17.737Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9b755ca6-123e-4184-9387-351d2c1f23ff, Duration=5ms)
-[2026-10-13T17:28:17.743Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=9150939c-400c-40b7-8444-235ace7027a5)
-[2026-10-13T17:28:17.752Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=9150939c-400c-40b7-8444-235ace7027a5, Duration=8ms)
-[2026-10-13T17:28:17.763Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a21c9d05-c33e-467f-baf2-64a3cb6bb7f5)
-[2026-10-13T17:28:17.768Z] 2026-10-13 10:28:17.768 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:17.769Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a21c9d05-c33e-467f-baf2-64a3cb6bb7f5, Duration=5ms)
-[2026-10-13T17:28:17.776Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=7f2c3595-d9b2-4f9e-972d-5c30851fcf2e)
-[2026-10-13T17:28:21.595Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172821Z_trial_head_attempt_1.md
-[2026-10-13T17:28:21.596Z] [tokens] prompt=1432 completion=252 total=1684 mutation_failed=False
-[2026-10-13T17:28:21.596Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=7f2c3595-d9b2-4f9e-972d-5c30851fcf2e, Duration=3819ms)
-[2026-10-13T17:28:21.607Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c5a876c2-9f0d-409a-b0ec-4a3e338e0587)
-[2026-10-13T17:28:21.611Z] 2026-10-13 10:28:21.611 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:21.612Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c5a876c2-9f0d-409a-b0ec-4a3e338e0587, Duration=5ms)
-[2026-10-13T17:28:21.617Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=800d0830-9961-4726-8b0d-fa7d167c5c67)
-[2026-10-13T17:28:21.637Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172821Z_decision_head.md
-[2026-10-13T17:28:21.637Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=800d0830-9961-4726-8b0d-fa7d167c5c67, Duration=20ms)
-[2026-10-13T17:28:21.647Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=8f2c2954-4e7c-4aa2-8461-f717e935252d)
-[2026-10-13T17:28:21.652Z] 2026-10-13 10:28:21.652 durabletask-worker INFO: 5447d4dab29a47efb00da15ca0c4232f: Orchestration modular_model_orchestrator completed with status: COMPLETED
-[2026-10-13T17:28:21.654Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=8f2c2954-4e7c-4aa2-8461-f717e935252d, Duration=7ms)
-[2026-10-13T17:28:27.678Z] Executing 'Functions.start_optimize_loop' (Reason='This function was programmatically called via the host APIs.', Id=581a0d42-36c1-4b08-bafb-c188f860a1fe)
-[2026-10-13T17:28:27.682Z] 2026-10-13 10:28:27.682 durabletask-async_client INFO: Starting new 'modular_model_orchestrator' instance with ID = '7f9fe918bfca406c889bbb20d97af0c9'.
-[2026-10-13T17:28:27.697Z] INFO:     127.0.0.1:0 - "POST /api/orchestrators/modular_model_orchestrator HTTP/1.1" 202 Accepted
-[2026-10-13T17:28:27.700Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9dcdf7bd-0602-4fb4-b635-e98d026a7d5d)
-[2026-10-13T17:28:27.701Z] Executed 'Functions.start_optimize_loop' (Succeeded, Id=581a0d42-36c1-4b08-bafb-c188f860a1fe, Duration=23ms)
-[2026-10-13T17:28:27.701Z] 2026-10-13 10:28:27.701 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator <unknown> yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:27.702Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9dcdf7bd-0602-4fb4-b635-e98d026a7d5d, Duration=2ms)
-[2026-10-13T17:28:27.707Z] Executing 'Functions.activity_gateway_read_meta' (Reason='(null)', Id=afe8b575-12f3-4c9c-90de-958e005699b5)
-[2026-10-13T17:28:27.714Z] Executed 'Functions.activity_gateway_read_meta' (Succeeded, Id=afe8b575-12f3-4c9c-90de-958e005699b5, Duration=6ms)
-[2026-10-13T17:28:27.721Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=f644041c-d7a6-4792-b81e-601bd1597aa9)
-[2026-10-13T17:28:27.722Z] 2026-10-13 10:28:27.722 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:27.723Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=f644041c-d7a6-4792-b81e-601bd1597aa9, Duration=2ms)
-[2026-10-13T17:28:27.728Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=afcdc617-d249-4ee5-99e0-ff635e43780b)
-[2026-10-13T17:28:27.734Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=afcdc617-d249-4ee5-99e0-ff635e43780b, Duration=5ms)
-[2026-10-13T17:28:27.742Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=8465dae7-2c4c-445a-9db6-cc73f89eb8dc)
-[2026-10-13T17:28:27.744Z] 2026-10-13 10:28:27.744 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:27.745Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=8465dae7-2c4c-445a-9db6-cc73f89eb8dc, Duration=2ms)
-[2026-10-13T17:28:27.749Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=cc8df0cf-df79-422d-a2b7-9ff8a82f3e02)
-[2026-10-13T17:28:27.758Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=cc8df0cf-df79-422d-a2b7-9ff8a82f3e02, Duration=8ms)
-[2026-10-13T17:28:27.765Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0f3c6a1e-756a-4404-84b7-6a2e1704de46)
-[2026-10-13T17:28:27.767Z] 2026-10-13 10:28:27.767 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:27.768Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0f3c6a1e-756a-4404-84b7-6a2e1704de46, Duration=2ms)
-[2026-10-13T17:28:27.774Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=73996722-132f-4a0c-8b98-fb206126d39d)
-[2026-10-13T17:28:31.536Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172831Z_trial_encode_attempt_1.md
-[2026-10-13T17:28:31.536Z] [tokens] prompt=1306 completion=279 total=1585 mutation_failed=False
-[2026-10-13T17:28:31.537Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=73996722-132f-4a0c-8b98-fb206126d39d, Duration=3763ms)
-[2026-10-13T17:28:31.545Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0ce79993-58b9-41e1-b635-791b1f28d65d)
-[2026-10-13T17:28:31.547Z] 2026-10-13 10:28:31.546 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:31.547Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0ce79993-58b9-41e1-b635-791b1f28d65d, Duration=2ms)
-[2026-10-13T17:28:31.553Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=6f0b5f6b-2949-4e58-87af-897c198776f0)
-[2026-10-13T17:28:31.567Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172831Z_decision_encode.md
-[2026-10-13T17:28:31.567Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=6f0b5f6b-2949-4e58-87af-897c198776f0, Duration=14ms)
-[2026-10-13T17:28:31.575Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=5f38aa76-2b1a-4049-87fc-34d73cdebfb7)
-[2026-10-13T17:28:31.576Z] 2026-10-13 10:28:31.576 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:31.577Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=5f38aa76-2b1a-4049-87fc-34d73cdebfb7, Duration=2ms)
-[2026-10-13T17:28:31.582Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=e4f19428-afab-4c50-a3d8-d58f3623481a)
-[2026-10-13T17:28:31.588Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=e4f19428-afab-4c50-a3d8-d58f3623481a, Duration=6ms)
-[2026-10-13T17:28:31.595Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=596fbbc8-cb23-4bd3-a2c5-70e331529b46)
-[2026-10-13T17:28:31.597Z] 2026-10-13 10:28:31.597 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:31.597Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=596fbbc8-cb23-4bd3-a2c5-70e331529b46, Duration=2ms)
-[2026-10-13T17:28:31.602Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=1ab6b056-ca1f-41dc-88bd-1aa1d9d14ac9)
-[2026-10-13T17:28:31.611Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=1ab6b056-ca1f-41dc-88bd-1aa1d9d14ac9, Duration=8ms)
-[2026-10-13T17:28:31.618Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=cc612ff4-b243-472a-b24f-650abc728e46)
-[2026-10-13T17:28:31.620Z] 2026-10-13 10:28:31.620 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:31.621Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=cc612ff4-b243-472a-b24f-650abc728e46, Duration=3ms)
-[2026-10-13T17:28:31.626Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=84b6f7b7-8cad-427c-9c09-1339965f74a1)
-[2026-10-13T17:28:35.033Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172835Z_trial_decode_attempt_1.md
-[2026-10-13T17:28:35.033Z] [tokens] prompt=1364 completion=315 total=1679 mutation_failed=False
-[2026-10-13T17:28:35.034Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=84b6f7b7-8cad-427c-9c09-1339965f74a1, Duration=3407ms)
-[2026-10-13T17:28:35.042Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=e076008a-1543-480b-89ee-6c00223e4781)
-[2026-10-13T17:28:35.044Z] 2026-10-13 10:28:35.044 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:35.045Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=e076008a-1543-480b-89ee-6c00223e4781, Duration=2ms)
-[2026-10-13T17:28:35.051Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=807cdeec-a695-428a-8997-98c56d3299a4)
-[2026-10-13T17:28:35.076Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172835Z_decision_decode.md
-[2026-10-13T17:28:35.077Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=807cdeec-a695-428a-8997-98c56d3299a4, Duration=26ms)
-[2026-10-13T17:28:35.084Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c4beb302-82b1-43d3-af63-7b5ddec9099b)
-[2026-10-13T17:28:35.086Z] 2026-10-13 10:28:35.086 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:35.087Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c4beb302-82b1-43d3-af63-7b5ddec9099b, Duration=3ms)
-[2026-10-13T17:28:35.092Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=636d0303-26f9-4883-9bca-2f2fd3236f4c)
-[2026-10-13T17:28:35.098Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=636d0303-26f9-4883-9bca-2f2fd3236f4c, Duration=5ms)
-[2026-10-13T17:28:35.105Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=253ea891-a95f-4fca-af23-4ab705d728ad)
-[2026-10-13T17:28:35.107Z] 2026-10-13 10:28:35.107 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:35.108Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=253ea891-a95f-4fca-af23-4ab705d728ad, Duration=3ms)
-[2026-10-13T17:28:35.112Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=2e931cdc-61f0-4677-b7f5-5e894944e143)
-[2026-10-13T17:28:35.121Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=2e931cdc-61f0-4677-b7f5-5e894944e143, Duration=8ms)
-[2026-10-13T17:28:35.128Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=083804b2-2159-4b05-8aa4-37fec050ffae)
-[2026-10-13T17:28:35.130Z] 2026-10-13 10:28:35.130 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:35.131Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=083804b2-2159-4b05-8aa4-37fec050ffae, Duration=3ms)
-[2026-10-13T17:28:35.136Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=9b3655d2-cea0-4b9f-9dfd-19da00ae3c24)
-[2026-10-13T17:28:38.985Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172838Z_trial_encode_attempt_1.md
-[2026-10-13T17:28:38.985Z] [tokens] prompt=1408 completion=276 total=1684 mutation_failed=False
-[2026-10-13T17:28:38.986Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=9b3655d2-cea0-4b9f-9dfd-19da00ae3c24, Duration=3849ms)
-[2026-10-13T17:28:38.997Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=dfe24512-2f74-4418-bc96-618e51b78bc9)
-[2026-10-13T17:28:38.999Z] 2026-10-13 10:28:38.999 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:39.000Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=dfe24512-2f74-4418-bc96-618e51b78bc9, Duration=3ms)
-[2026-10-13T17:28:39.005Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=b1b9f30a-e780-42dc-bc5b-a1e2f04646b9)
-[2026-10-13T17:28:39.021Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172839Z_decision_encode.md
-[2026-10-13T17:28:39.022Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=b1b9f30a-e780-42dc-bc5b-a1e2f04646b9, Duration=16ms)
-[2026-10-13T17:28:39.030Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=cbf0e89b-7188-4024-88cc-3909560e8a12)
-[2026-10-13T17:28:39.032Z] 2026-10-13 10:28:39.032 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:39.033Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=cbf0e89b-7188-4024-88cc-3909560e8a12, Duration=3ms)
-[2026-10-13T17:28:39.040Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=ca8e8fbf-6628-4574-83a6-9015518536ba)
-[2026-10-13T17:28:39.046Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=ca8e8fbf-6628-4574-83a6-9015518536ba, Duration=6ms)
-[2026-10-13T17:28:39.053Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=88b1a93f-ffa2-4ab9-b4ca-b4f6d64c0f65)
-[2026-10-13T17:28:39.055Z] 2026-10-13 10:28:39.055 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:39.056Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=88b1a93f-ffa2-4ab9-b4ca-b4f6d64c0f65, Duration=3ms)
-[2026-10-13T17:28:39.061Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=39e1d2e2-943a-4982-8f6a-1e5c22bb6df7)
-[2026-10-13T17:28:39.070Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=39e1d2e2-943a-4982-8f6a-1e5c22bb6df7, Duration=9ms)
-[2026-10-13T17:28:39.078Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b381649c-f916-4713-bfb2-33b316f1192d)
-[2026-10-13T17:28:39.081Z] 2026-10-13 10:28:39.081 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:39.082Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b381649c-f916-4713-bfb2-33b316f1192d, Duration=3ms)
-[2026-10-13T17:28:39.087Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=eade5c16-32e4-44e4-b164-28fa5483d51f)
-[2026-10-13T17:28:42.190Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172842Z_trial_decode_attempt_1.md
-[2026-10-13T17:28:42.190Z] [tokens] prompt=1414 completion=302 total=1716 mutation_failed=False
-[2026-10-13T17:28:42.190Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=eade5c16-32e4-44e4-b164-28fa5483d51f, Duration=3103ms)
-[2026-10-13T17:28:42.199Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=8cb64f48-32e8-404f-8901-151e28ce8a19)
-[2026-10-13T17:28:42.202Z] 2026-10-13 10:28:42.202 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:42.203Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=8cb64f48-32e8-404f-8901-151e28ce8a19, Duration=3ms)
-[2026-10-13T17:28:42.208Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=523b15d6-ebb3-4268-bd64-d3802b860efe)
-[2026-10-13T17:28:42.221Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172842Z_decision_decode.md
-[2026-10-13T17:28:42.222Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=523b15d6-ebb3-4268-bd64-d3802b860efe, Duration=14ms)
-[2026-10-13T17:28:42.230Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=6df24bd4-9236-435b-b143-4d30d5bc08e7)
-[2026-10-13T17:28:42.233Z] 2026-10-13 10:28:42.233 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:42.234Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=6df24bd4-9236-435b-b143-4d30d5bc08e7, Duration=3ms)
-[2026-10-13T17:28:42.239Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=85bcc823-c49f-46d5-ae1f-58aff6d5bab0)
-[2026-10-13T17:28:42.245Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=85bcc823-c49f-46d5-ae1f-58aff6d5bab0, Duration=5ms)
-[2026-10-13T17:28:42.252Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=aea34f2e-1764-4a53-8819-b4988f3b9fa4)
-[2026-10-13T17:28:42.255Z] 2026-10-13 10:28:42.255 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:42.256Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=aea34f2e-1764-4a53-8819-b4988f3b9fa4, Duration=3ms)
-[2026-10-13T17:28:42.260Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=96350af0-ed67-48ee-805e-a321fab57c46)
-[2026-10-13T17:28:42.269Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=96350af0-ed67-48ee-805e-a321fab57c46, Duration=8ms)
-[2026-10-13T17:28:42.277Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=79b50754-805e-4762-ba17-f2db42fa9411)
-[2026-10-13T17:28:42.279Z] 2026-10-13 10:28:42.279 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:42.280Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=79b50754-805e-4762-ba17-f2db42fa9411, Duration=3ms)
-[2026-10-13T17:28:42.286Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=f399fdd7-4fe3-457e-ba14-a2c4dcba6595)
-[2026-10-13T17:28:45.049Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172845Z_trial_encode_attempt_1.md
-[2026-10-13T17:28:45.049Z] [tokens] prompt=1403 completion=283 total=1686 mutation_failed=False
-[2026-10-13T17:28:45.050Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=f399fdd7-4fe3-457e-ba14-a2c4dcba6595, Duration=2763ms)
-[2026-10-13T17:28:45.060Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0adc8dac-d193-4aac-86f8-eded3e41c01e)
-[2026-10-13T17:28:45.063Z] 2026-10-13 10:28:45.063 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:45.064Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0adc8dac-d193-4aac-86f8-eded3e41c01e, Duration=3ms)
-[2026-10-13T17:28:45.069Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=9a4e4570-d208-42f0-8f65-fda1a10ff515)
-[2026-10-13T17:28:45.082Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172845Z_decision_encode.md
-[2026-10-13T17:28:45.083Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=9a4e4570-d208-42f0-8f65-fda1a10ff515, Duration=14ms)
-[2026-10-13T17:28:45.091Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b410f6ed-81e2-4fdc-be9e-5e26a99ee9d7)
-[2026-10-13T17:28:45.095Z] 2026-10-13 10:28:45.095 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:45.095Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b410f6ed-81e2-4fdc-be9e-5e26a99ee9d7, Duration=4ms)
-[2026-10-13T17:28:45.100Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=ccba8698-60db-4e61-b0df-03325bc82265)
-[2026-10-13T17:28:45.106Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=ccba8698-60db-4e61-b0df-03325bc82265, Duration=6ms)
-[2026-10-13T17:28:45.114Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7d65a7fc-332c-4644-8d31-be18b2046003)
-[2026-10-13T17:28:45.117Z] 2026-10-13 10:28:45.117 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:45.118Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7d65a7fc-332c-4644-8d31-be18b2046003, Duration=4ms)
-[2026-10-13T17:28:45.124Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=192b7a99-d122-4070-a959-24fbdb585725)
-[2026-10-13T17:28:45.133Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=192b7a99-d122-4070-a959-24fbdb585725, Duration=8ms)
-[2026-10-13T17:28:45.141Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=28bd2514-472c-49b2-8ae4-c39f0bd82390)
-[2026-10-13T17:28:45.144Z] 2026-10-13 10:28:45.144 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:45.145Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=28bd2514-472c-49b2-8ae4-c39f0bd82390, Duration=4ms)
-[2026-10-13T17:28:45.150Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=0bf96c97-62cd-4ef2-8ab7-8b0088c88cc2)
-[2026-10-13T17:28:47.998Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172847Z_trial_decode_attempt_1.md
-[2026-10-13T17:28:47.998Z] [tokens] prompt=1314 completion=300 total=1614 mutation_failed=False
-[2026-10-13T17:28:47.998Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=0bf96c97-62cd-4ef2-8ab7-8b0088c88cc2, Duration=2848ms)
-[2026-10-13T17:28:48.010Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2fec8e79-c80a-425f-881b-b1a6b5432097)
-[2026-10-13T17:28:48.013Z] 2026-10-13 10:28:48.013 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:48.015Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2fec8e79-c80a-425f-881b-b1a6b5432097, Duration=5ms)
-[2026-10-13T17:28:48.022Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=93c9184b-ee02-4f0f-af01-6ff76cacae20)
-[2026-10-13T17:28:48.039Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172848Z_decision_decode.md
-[2026-10-13T17:28:48.040Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=93c9184b-ee02-4f0f-af01-6ff76cacae20, Duration=17ms)
-[2026-10-13T17:28:48.050Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d5233417-b95a-4410-b52b-7d655b6380ea)
-[2026-10-13T17:28:48.053Z] 2026-10-13 10:28:48.053 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:48.054Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d5233417-b95a-4410-b52b-7d655b6380ea, Duration=4ms)
-[2026-10-13T17:28:48.059Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=8057a6e5-9171-4c67-8748-9cbd2a76ee4a)
-[2026-10-13T17:28:48.066Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=8057a6e5-9171-4c67-8748-9cbd2a76ee4a, Duration=6ms)
-[2026-10-13T17:28:48.076Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0a9921bc-3488-4a22-b753-b994dcc158cb)
-[2026-10-13T17:28:48.079Z] 2026-10-13 10:28:48.079 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:48.080Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0a9921bc-3488-4a22-b753-b994dcc158cb, Duration=5ms)
-[2026-10-13T17:28:48.087Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=e8e2d1ac-96b4-4609-b424-e90909f57783)
-[2026-10-13T17:28:48.106Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=e8e2d1ac-96b4-4609-b424-e90909f57783, Duration=18ms)
-[2026-10-13T17:28:48.115Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2868385a-a56c-4d59-bf83-755afdb6093a)
-[2026-10-13T17:28:48.119Z] 2026-10-13 10:28:48.119 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:48.120Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2868385a-a56c-4d59-bf83-755afdb6093a, Duration=5ms)
-[2026-10-13T17:28:48.127Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=b4b39fc1-4bf0-4891-8e8a-6148ef832d8d)
-[2026-10-13T17:28:52.009Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172852Z_trial_encode_attempt_1.md
-[2026-10-13T17:28:52.009Z] [tokens] prompt=1303 completion=269 total=1572 mutation_failed=False
-[2026-10-13T17:28:52.009Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=b4b39fc1-4bf0-4891-8e8a-6148ef832d8d, Duration=3882ms)
-[2026-10-13T17:28:52.019Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c8043a39-d9a6-4c7a-8942-63e005c0f937)
-[2026-10-13T17:28:52.024Z] 2026-10-13 10:28:52.024 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:52.025Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c8043a39-d9a6-4c7a-8942-63e005c0f937, Duration=6ms)
-[2026-10-13T17:28:52.032Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=c4a2cab7-2745-4b65-bd3d-0880fee3b419)
-[2026-10-13T17:28:52.050Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172852Z_decision_encode.md
-[2026-10-13T17:28:52.051Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=c4a2cab7-2745-4b65-bd3d-0880fee3b419, Duration=19ms)
-[2026-10-13T17:28:52.060Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9e58efbe-1f07-4afa-add4-29f807060fba)
-[2026-10-13T17:28:52.063Z] 2026-10-13 10:28:52.063 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:52.064Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9e58efbe-1f07-4afa-add4-29f807060fba, Duration=4ms)
-[2026-10-13T17:28:52.068Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=7fd8eadb-9918-419e-8e19-0b986ddd8e19)
-[2026-10-13T17:28:52.074Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=7fd8eadb-9918-419e-8e19-0b986ddd8e19, Duration=6ms)
-[2026-10-13T17:28:52.082Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=eae2aff8-1406-477d-a1f6-d9ba914dbaf1)
-[2026-10-13T17:28:52.086Z] 2026-10-13 10:28:52.085 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:52.087Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=eae2aff8-1406-477d-a1f6-d9ba914dbaf1, Duration=4ms)
-[2026-10-13T17:28:52.091Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=4b827109-ca32-48ec-9635-25f8431f753f)
-[2026-10-13T17:28:52.100Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=4b827109-ca32-48ec-9635-25f8431f753f, Duration=9ms)
-[2026-10-13T17:28:52.110Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ce0abffb-5b88-470b-bf32-79a116e6e628)
-[2026-10-13T17:28:52.113Z] 2026-10-13 10:28:52.113 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:52.114Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ce0abffb-5b88-470b-bf32-79a116e6e628, Duration=4ms)
-[2026-10-13T17:28:52.119Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=af71b104-76d9-493d-aa25-8e284758880f)
-[2026-10-13T17:28:55.269Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172855Z_trial_decode_attempt_1.md
-[2026-10-13T17:28:55.269Z] [tokens] prompt=1314 completion=306 total=1620 mutation_failed=False
-[2026-10-13T17:28:55.269Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=af71b104-76d9-493d-aa25-8e284758880f, Duration=3149ms)
-[2026-10-13T17:28:55.279Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=92e617e3-01f3-4c92-a7c4-7b6f93d2a359)
-[2026-10-13T17:28:55.291Z] 2026-10-13 10:28:55.291 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:55.293Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=92e617e3-01f3-4c92-a7c4-7b6f93d2a359, Duration=14ms)
-[2026-10-13T17:28:55.299Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=31ccbd2c-e80f-4ed5-b6d0-afe3a59690a3)
-[2026-10-13T17:28:55.314Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172855Z_decision_decode.md
-[2026-10-13T17:28:55.314Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=31ccbd2c-e80f-4ed5-b6d0-afe3a59690a3, Duration=15ms)
-[2026-10-13T17:28:55.324Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c8623ce3-5c6e-4ce3-8ec4-a07f33debc83)
-[2026-10-13T17:28:55.328Z] 2026-10-13 10:28:55.328 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:55.329Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c8623ce3-5c6e-4ce3-8ec4-a07f33debc83, Duration=4ms)
-[2026-10-13T17:28:55.333Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=3c8f7bf4-2c51-47fb-a5db-170c514ec710)
-[2026-10-13T17:28:55.340Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=3c8f7bf4-2c51-47fb-a5db-170c514ec710, Duration=6ms)
-[2026-10-13T17:28:55.348Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b102fdc0-541a-485e-bc8e-353c8569e2af)
-[2026-10-13T17:28:55.352Z] 2026-10-13 10:28:55.352 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:55.353Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b102fdc0-541a-485e-bc8e-353c8569e2af, Duration=5ms)
-[2026-10-13T17:28:55.358Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=e8ec130f-9ec9-40a3-962a-4f4b87eb8ded)
-[2026-10-13T17:28:55.367Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=e8ec130f-9ec9-40a3-962a-4f4b87eb8ded, Duration=8ms)
-[2026-10-13T17:28:55.377Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=099db2c6-7654-4e38-9d5b-d2ac40f8f1e5)
-[2026-10-13T17:28:55.381Z] 2026-10-13 10:28:55.380 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:55.381Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=099db2c6-7654-4e38-9d5b-d2ac40f8f1e5, Duration=4ms)
-[2026-10-13T17:28:55.387Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=8ff8c0a0-5abf-4ddd-808f-54afa1ed03c1)
-[2026-10-13T17:28:59.133Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172859Z_trial_encode_attempt_1.md
-[2026-10-13T17:28:59.133Z] [tokens] prompt=1303 completion=270 total=1573 mutation_failed=False
-[2026-10-13T17:28:59.133Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=8ff8c0a0-5abf-4ddd-808f-54afa1ed03c1, Duration=3746ms)
-[2026-10-13T17:28:59.156Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=3df7963e-326b-4cf9-9b70-8411ec8af79c)
-[2026-10-13T17:28:59.160Z] 2026-10-13 10:28:59.160 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:59.160Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=3df7963e-326b-4cf9-9b70-8411ec8af79c, Duration=4ms)
-[2026-10-13T17:28:59.165Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=80b2c741-88bb-4531-b725-f4241bfbf43d)
-[2026-10-13T17:28:59.180Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172859Z_decision_encode.md
-[2026-10-13T17:28:59.180Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=80b2c741-88bb-4531-b725-f4241bfbf43d, Duration=14ms)
-[2026-10-13T17:28:59.190Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=873b5358-4dac-42c1-91a5-8366f1e42bc4)
-[2026-10-13T17:28:59.193Z] 2026-10-13 10:28:59.193 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:59.194Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=873b5358-4dac-42c1-91a5-8366f1e42bc4, Duration=5ms)
-[2026-10-13T17:28:59.199Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=1441173d-03ef-49e4-8d0a-57153d7e13d4)
-[2026-10-13T17:28:59.205Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=1441173d-03ef-49e4-8d0a-57153d7e13d4, Duration=5ms)
-[2026-10-13T17:28:59.215Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0fee7dfb-3775-4eba-ac66-93228e39b09a)
-[2026-10-13T17:28:59.219Z] 2026-10-13 10:28:59.219 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:59.220Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0fee7dfb-3775-4eba-ac66-93228e39b09a, Duration=5ms)
-[2026-10-13T17:28:59.226Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=0bddeba9-1c47-40bf-8fdc-761b046bc99c)
-[2026-10-13T17:28:59.235Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=0bddeba9-1c47-40bf-8fdc-761b046bc99c, Duration=8ms)
-[2026-10-13T17:28:59.244Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=cfc6f33b-c83f-4ecd-9fec-53bdf7a32554)
-[2026-10-13T17:28:59.248Z] 2026-10-13 10:28:59.248 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:28:59.249Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=cfc6f33b-c83f-4ecd-9fec-53bdf7a32554, Duration=5ms)
-[2026-10-13T17:28:59.255Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=6a2645d1-9ad0-4e3c-8fd1-ae21b4d5bcaf)
-[2026-10-13T17:29:02.277Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172902Z_trial_decode_attempt_1.md
-[2026-10-13T17:29:02.277Z] [tokens] prompt=1314 completion=298 total=1612 mutation_failed=False
-[2026-10-13T17:29:02.277Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=6a2645d1-9ad0-4e3c-8fd1-ae21b4d5bcaf, Duration=3022ms)
-[2026-10-13T17:29:02.287Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a56bdb6f-57e0-4818-bcf3-f8080014a003)
-[2026-10-13T17:29:02.291Z] 2026-10-13 10:29:02.291 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
-[2026-10-13T17:29:02.292Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a56bdb6f-57e0-4818-bcf3-f8080014a003, Duration=4ms)
-[2026-10-13T17:29:02.297Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=bbddf016-7fc7-4e4a-bc90-6b9ba43a3994)
-[2026-10-13T17:29:02.315Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261013T172902Z_decision_decode.md
-[2026-10-13T17:29:02.315Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=bbddf016-7fc7-4e4a-bc90-6b9ba43a3994, Duration=18ms)
-[2026-10-13T17:29:02.324Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=57562ad1-9bfe-4b9d-88a4-b296ab8f69f9)
-[2026-10-13T17:29:02.329Z] 2026-10-13 10:29:02.328 durabletask-worker INFO: 7f9fe918bfca406c889bbb20d97af0c9: Orchestration modular_model_orchestrator completed with status: COMPLETED
-[2026-10-13T17:29:02.330Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=57562ad1-9bfe-4b9d-88a4-b296ab8f69f9, Duration=5ms)
+[2026-10-15T20:44:41.344Z] Host lock lease acquired by instance ID '00000000000000000000000055312500'.
+[2026-10-15T20:44:44.090Z] Executing 'Functions.start_optimize_loop' (Reason='This function was programmatically called via the host APIs.', Id=95a07376-cb2b-4e1e-8613-303593989a03)
+[2026-10-15T20:44:44.160Z] 2026-10-15 13:44:44.160 durabletask-async_client INFO: Starting new 'modular_model_orchestrator' instance with ID = '0e6e7a6a49a44a6182dcd8a350237763'.
+[2026-10-15T20:44:44.314Z] INFO:     127.0.0.1:0 - "POST /api/orchestrators/modular_model_orchestrator HTTP/1.1" 202 Accepted
+[2026-10-15T20:44:44.343Z] Executed 'Functions.start_optimize_loop' (Succeeded, Id=95a07376-cb2b-4e1e-8613-303593989a03, Duration=274ms)
+[2026-10-15T20:44:44.402Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=15439863-ea61-4ea0-b395-1a456ef93120)
+[2026-10-15T20:44:44.406Z] 2026-10-15 13:44:44.406 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator <unknown> yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:44.417Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=15439863-ea61-4ea0-b395-1a456ef93120, Duration=34ms)
+[2026-10-15T20:44:44.446Z] Executing 'Functions.activity_gateway_read_meta' (Reason='(null)', Id=bb5be1a8-0eff-4384-a6a7-1459d997f9fb)
+[2026-10-15T20:44:44.474Z] Executed 'Functions.activity_gateway_read_meta' (Succeeded, Id=bb5be1a8-0eff-4384-a6a7-1459d997f9fb, Duration=29ms)
+[2026-10-15T20:44:44.518Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=afeb1243-5ed6-4d06-82d2-858119c616fa)
+[2026-10-15T20:44:44.520Z] 2026-10-15 13:44:44.520 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:44.521Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=afeb1243-5ed6-4d06-82d2-858119c616fa, Duration=4ms)
+[2026-10-15T20:44:44.531Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=5d7d38d2-8c11-4f03-94b8-8eae6fc9304a)
+[2026-10-15T20:44:44.543Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=5d7d38d2-8c11-4f03-94b8-8eae6fc9304a, Duration=11ms)
+[2026-10-15T20:44:44.557Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b0bcb44a-eac8-4f40-b2a6-5d535d83b37d)
+[2026-10-15T20:44:44.561Z] 2026-10-15 13:44:44.561 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:44.562Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b0bcb44a-eac8-4f40-b2a6-5d535d83b37d, Duration=5ms)
+[2026-10-15T20:44:44.571Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=52d6e34e-4e07-4df3-834e-3b73117c03f5)
+[2026-10-15T20:44:44.583Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=52d6e34e-4e07-4df3-834e-3b73117c03f5, Duration=12ms)
+[2026-10-15T20:44:44.599Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=e7707c11-ec05-4e7d-a996-73c03fbee436)
+[2026-10-15T20:44:44.601Z] 2026-10-15 13:44:44.601 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:44.603Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=e7707c11-ec05-4e7d-a996-73c03fbee436, Duration=3ms)
+[2026-10-15T20:44:44.616Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=24d5aa1a-bbd8-4745-bebe-61314ae45981)
+[2026-10-15T20:44:49.436Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204449Z_trial_layer1_r0c0_attempt_1.md
+[2026-10-15T20:44:49.445Z] [tokens] prompt=1310 completion=267 total=1577 mutation_failed=False
+[2026-10-15T20:44:49.445Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=24d5aa1a-bbd8-4745-bebe-61314ae45981, Duration=4829ms)
+[2026-10-15T20:44:49.462Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7db436a1-29a8-4210-a0d6-986dc79bd1ac)
+[2026-10-15T20:44:49.465Z] 2026-10-15 13:44:49.464 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:49.466Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7db436a1-29a8-4210-a0d6-986dc79bd1ac, Duration=3ms)
+[2026-10-15T20:44:49.477Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=1d5bb836-29a3-4086-a474-82c19d816db2)
+[2026-10-15T20:44:49.507Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204449Z_decision_layer1_r0c0.md
+[2026-10-15T20:44:49.507Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=1d5bb836-29a3-4086-a474-82c19d816db2, Duration=30ms)
+[2026-10-15T20:44:49.518Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=afe7953e-6187-49dc-9c68-77fd2c7b152d)
+[2026-10-15T20:44:49.520Z] 2026-10-15 13:44:49.520 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:49.521Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=afe7953e-6187-49dc-9c68-77fd2c7b152d, Duration=3ms)
+[2026-10-15T20:44:49.529Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=2ebd87e6-3c08-4e34-9518-d5dd7178fe77)
+[2026-10-15T20:44:49.540Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=2ebd87e6-3c08-4e34-9518-d5dd7178fe77, Duration=11ms)
+[2026-10-15T20:44:49.552Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ff9df05a-45ea-41aa-9af2-c77fe91032b5)
+[2026-10-15T20:44:49.554Z] 2026-10-15 13:44:49.554 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:49.555Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ff9df05a-45ea-41aa-9af2-c77fe91032b5, Duration=3ms)
+[2026-10-15T20:44:49.562Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=b9342e43-ed26-4b20-ba6b-5c28d4d41816)
+[2026-10-15T20:44:49.577Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=b9342e43-ed26-4b20-ba6b-5c28d4d41816, Duration=14ms)
+[2026-10-15T20:44:49.587Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=767c8cbe-8a98-463c-9522-51cac872bcd4)
+[2026-10-15T20:44:49.590Z] 2026-10-15 13:44:49.589 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:49.591Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=767c8cbe-8a98-463c-9522-51cac872bcd4, Duration=3ms)
+[2026-10-15T20:44:49.598Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=a72a7c3f-0cf8-4118-adce-924691991635)
+[2026-10-15T20:44:52.292Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204452Z_trial_layer1_r0c1_attempt_1.md
+[2026-10-15T20:44:52.292Z] [tokens] prompt=1399 completion=262 total=1661 mutation_failed=False
+[2026-10-15T20:44:52.293Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=a72a7c3f-0cf8-4118-adce-924691991635, Duration=2694ms)
+[2026-10-15T20:44:52.306Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=60bfab26-1182-4589-8617-61566bf9ed64)
+[2026-10-15T20:44:52.309Z] 2026-10-15 13:44:52.309 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:52.310Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=60bfab26-1182-4589-8617-61566bf9ed64, Duration=4ms)
+[2026-10-15T20:44:52.318Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=6a0b4e35-62dc-4e8b-b56e-2e0189576c3b)
+[2026-10-15T20:44:52.340Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204452Z_decision_layer1_r0c1.md
+[2026-10-15T20:44:52.341Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=6a0b4e35-62dc-4e8b-b56e-2e0189576c3b, Duration=23ms)
+[2026-10-15T20:44:52.357Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c22480e1-0ee1-4db6-aeeb-316b78bd4b39)
+[2026-10-15T20:44:52.360Z] 2026-10-15 13:44:52.359 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:52.361Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c22480e1-0ee1-4db6-aeeb-316b78bd4b39, Duration=3ms)
+[2026-10-15T20:44:52.368Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=6025c118-c79b-4fdf-b56b-7501f6ea954a)
+[2026-10-15T20:44:52.376Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=6025c118-c79b-4fdf-b56b-7501f6ea954a, Duration=7ms)
+[2026-10-15T20:44:52.387Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a07f90cf-b19e-44ff-80e8-6091a02c2e48)
+[2026-10-15T20:44:52.389Z] 2026-10-15 13:44:52.389 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:52.390Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a07f90cf-b19e-44ff-80e8-6091a02c2e48, Duration=3ms)
+[2026-10-15T20:44:52.396Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=1e36fa0a-27b8-449a-8dab-c74fe7d94bc5)
+[2026-10-15T20:44:52.408Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=1e36fa0a-27b8-449a-8dab-c74fe7d94bc5, Duration=11ms)
+[2026-10-15T20:44:52.420Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0a3da9af-e278-440f-b77c-6f8286095a39)
+[2026-10-15T20:44:52.422Z] 2026-10-15 13:44:52.422 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:52.423Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0a3da9af-e278-440f-b77c-6f8286095a39, Duration=3ms)
+[2026-10-15T20:44:52.430Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=6450f971-f6e4-4b30-b8c9-261d8b25f669)
+[2026-10-15T20:44:55.405Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204455Z_trial_layer2_r0c0_attempt_1.md
+[2026-10-15T20:44:55.405Z] [tokens] prompt=1441 completion=288 total=1729 mutation_failed=False
+[2026-10-15T20:44:55.406Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=6450f971-f6e4-4b30-b8c9-261d8b25f669, Duration=2975ms)
+[2026-10-15T20:44:55.422Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b8836440-5bbe-4cf8-ad4b-f0d6ba1400a4)
+[2026-10-15T20:44:55.425Z] 2026-10-15 13:44:55.425 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:55.426Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b8836440-5bbe-4cf8-ad4b-f0d6ba1400a4, Duration=4ms)
+[2026-10-15T20:44:55.437Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=98babc73-3538-4f9c-b576-33f203ae8c88)
+[2026-10-15T20:44:55.465Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204455Z_decision_layer2_r0c0.md
+[2026-10-15T20:44:55.465Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=98babc73-3538-4f9c-b576-33f203ae8c88, Duration=28ms)
+[2026-10-15T20:44:55.480Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2bedef57-ecd4-46a6-a68c-52ef9b628cc5)
+[2026-10-15T20:44:55.483Z] 2026-10-15 13:44:55.483 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:55.484Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2bedef57-ecd4-46a6-a68c-52ef9b628cc5, Duration=4ms)
+[2026-10-15T20:44:55.493Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=d85bd072-17b2-4284-ab80-31cd4b342912)
+[2026-10-15T20:44:55.501Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=d85bd072-17b2-4284-ab80-31cd4b342912, Duration=8ms)
+[2026-10-15T20:44:55.513Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c1deafad-c601-4548-b7f9-b674d4265466)
+[2026-10-15T20:44:55.515Z] 2026-10-15 13:44:55.515 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:55.516Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c1deafad-c601-4548-b7f9-b674d4265466, Duration=3ms)
+[2026-10-15T20:44:55.523Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=8a67a289-2374-4f36-8272-b6f186ff0213)
+[2026-10-15T20:44:55.535Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=8a67a289-2374-4f36-8272-b6f186ff0213, Duration=12ms)
+[2026-10-15T20:44:55.546Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1af7086d-c5c4-403b-b7f1-a5e36b83a204)
+[2026-10-15T20:44:55.548Z] 2026-10-15 13:44:55.548 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:55.549Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1af7086d-c5c4-403b-b7f1-a5e36b83a204, Duration=3ms)
+[2026-10-15T20:44:55.557Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=a4917bfc-7a16-42ce-b400-1a96b7e9f51f)
+[2026-10-15T20:44:58.577Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204458Z_trial_layer2_r1c0_attempt_1.md
+[2026-10-15T20:44:58.577Z] [tokens] prompt=1434 completion=263 total=1697 mutation_failed=False
+[2026-10-15T20:44:58.577Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=a4917bfc-7a16-42ce-b400-1a96b7e9f51f, Duration=3020ms)
+[2026-10-15T20:44:58.588Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ddf959d2-e3ba-4333-8a9a-cfb55d83f911)
+[2026-10-15T20:44:58.591Z] 2026-10-15 13:44:58.591 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:58.592Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ddf959d2-e3ba-4333-8a9a-cfb55d83f911, Duration=4ms)
+[2026-10-15T20:44:58.599Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=727faaae-a9d9-417f-b44a-7e67cb057b0a)
+[2026-10-15T20:44:58.617Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204458Z_decision_layer2_r1c0.md
+[2026-10-15T20:44:58.617Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=727faaae-a9d9-417f-b44a-7e67cb057b0a, Duration=18ms)
+[2026-10-15T20:44:58.627Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=609a870e-29e5-4974-9f30-f5f85e3fe6be)
+[2026-10-15T20:44:58.630Z] 2026-10-15 13:44:58.629 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:58.631Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=609a870e-29e5-4974-9f30-f5f85e3fe6be, Duration=4ms)
+[2026-10-15T20:44:58.637Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=47e1bae6-b74a-4fa8-98f8-1e83c71136cb)
+[2026-10-15T20:44:58.644Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=47e1bae6-b74a-4fa8-98f8-1e83c71136cb, Duration=7ms)
+[2026-10-15T20:44:58.657Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d1c3872f-23b6-444c-bd87-78563aa48c52)
+[2026-10-15T20:44:58.660Z] 2026-10-15 13:44:58.660 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:58.662Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d1c3872f-23b6-444c-bd87-78563aa48c52, Duration=4ms)
+[2026-10-15T20:44:58.671Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=f439d251-4a84-4cd5-87eb-e3b40119d516)
+[2026-10-15T20:44:58.682Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=f439d251-4a84-4cd5-87eb-e3b40119d516, Duration=11ms)
+[2026-10-15T20:44:58.691Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=21acfb20-85ec-482c-bfbe-7e8ecb230a78)
+[2026-10-15T20:44:58.694Z] 2026-10-15 13:44:58.694 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:44:58.695Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=21acfb20-85ec-482c-bfbe-7e8ecb230a78, Duration=4ms)
+[2026-10-15T20:44:58.703Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=d696ac62-7d68-4d31-9547-ab37cdadc40c)
+[2026-10-15T20:45:01.898Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204501Z_trial_head_attempt_1.md
+[2026-10-15T20:45:01.898Z] [tokens] prompt=1418 completion=245 total=1663 mutation_failed=False
+[2026-10-15T20:45:01.899Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=d696ac62-7d68-4d31-9547-ab37cdadc40c, Duration=3196ms)
+[2026-10-15T20:45:01.912Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1bd581ed-5e65-4e07-8342-05d7da5456bd)
+[2026-10-15T20:45:01.915Z] 2026-10-15 13:45:01.915 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:01.916Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1bd581ed-5e65-4e07-8342-05d7da5456bd, Duration=4ms)
+[2026-10-15T20:45:01.924Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=7ae2ccb8-af12-493e-89c4-bc781717112b)
+[2026-10-15T20:45:01.943Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204501Z_decision_head.md
+[2026-10-15T20:45:01.944Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=7ae2ccb8-af12-493e-89c4-bc781717112b, Duration=19ms)
+[2026-10-15T20:45:01.955Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=f0022748-37c0-4ddc-ac57-528018c87a4a)
+[2026-10-15T20:45:01.958Z] 2026-10-15 13:45:01.957 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:01.959Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=f0022748-37c0-4ddc-ac57-528018c87a4a, Duration=4ms)
+[2026-10-15T20:45:01.967Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=f410f8fc-b440-4d8d-98d0-bd5b886f55e1)
+[2026-10-15T20:45:01.974Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=f410f8fc-b440-4d8d-98d0-bd5b886f55e1, Duration=7ms)
+[2026-10-15T20:45:01.992Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=bc2ffd41-fefc-43eb-91f8-edd954f7dcb4)
+[2026-10-15T20:45:02.000Z] 2026-10-15 13:45:02.000 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:02.002Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=bc2ffd41-fefc-43eb-91f8-edd954f7dcb4, Duration=9ms)
+[2026-10-15T20:45:02.010Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=6b9c917b-41cc-4fb6-82ac-a84aa4842244)
+[2026-10-15T20:45:02.022Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=6b9c917b-41cc-4fb6-82ac-a84aa4842244, Duration=12ms)
+[2026-10-15T20:45:02.035Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=df1ae3c9-e890-4fc6-b6c2-cfc516c97987)
+[2026-10-15T20:45:02.039Z] 2026-10-15 13:45:02.039 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:02.040Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=df1ae3c9-e890-4fc6-b6c2-cfc516c97987, Duration=6ms)
+[2026-10-15T20:45:02.049Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=6f5fd920-acb7-4a19-9e61-e5d080b96217)
+[2026-10-15T20:45:05.403Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204505Z_trial_layer1_r0c0_attempt_1.md
+[2026-10-15T20:45:05.403Z] [tokens] prompt=1415 completion=309 total=1724 mutation_failed=False
+[2026-10-15T20:45:05.404Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=6f5fd920-acb7-4a19-9e61-e5d080b96217, Duration=3354ms)
+[2026-10-15T20:45:05.417Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9e218c68-f2a5-4e3d-895c-993d407116c4)
+[2026-10-15T20:45:05.422Z] 2026-10-15 13:45:05.421 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:05.423Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9e218c68-f2a5-4e3d-895c-993d407116c4, Duration=5ms)
+[2026-10-15T20:45:05.431Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=a3e55f18-9e60-457a-9207-8a8cb4e9eb7c)
+[2026-10-15T20:45:05.450Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204505Z_decision_layer1_r0c0.md
+[2026-10-15T20:45:05.451Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=a3e55f18-9e60-457a-9207-8a8cb4e9eb7c, Duration=20ms)
+[2026-10-15T20:45:05.462Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=e2293b06-4c8f-4342-9c3b-f62452c53a46)
+[2026-10-15T20:45:05.466Z] 2026-10-15 13:45:05.466 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:05.467Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=e2293b06-4c8f-4342-9c3b-f62452c53a46, Duration=5ms)
+[2026-10-15T20:45:05.476Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=d4b74d2e-b909-4ebc-bb47-f3f511cdf98a)
+[2026-10-15T20:45:05.485Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=d4b74d2e-b909-4ebc-bb47-f3f511cdf98a, Duration=9ms)
+[2026-10-15T20:45:05.498Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=765ad0fb-73d7-409b-b7a1-99345699feaa)
+[2026-10-15T20:45:05.502Z] 2026-10-15 13:45:05.502 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:05.503Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=765ad0fb-73d7-409b-b7a1-99345699feaa, Duration=5ms)
+[2026-10-15T20:45:05.511Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=b25108d2-2bc7-400e-826f-70e1ac7a22ce)
+[2026-10-15T20:45:05.522Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=b25108d2-2bc7-400e-826f-70e1ac7a22ce, Duration=11ms)
+[2026-10-15T20:45:05.533Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7c4075bf-97ff-479d-82ff-c7da4af3207a)
+[2026-10-15T20:45:05.536Z] 2026-10-15 13:45:05.536 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:05.538Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7c4075bf-97ff-479d-82ff-c7da4af3207a, Duration=4ms)
+[2026-10-15T20:45:05.545Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=ee3b01e3-5f26-429b-a3fc-56ddcf28ef7d)
+[2026-10-15T20:45:09.088Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204509Z_trial_layer1_r0c1_attempt_1.md
+[2026-10-15T20:45:09.088Z] [tokens] prompt=1348 completion=289 total=1637 mutation_failed=False
+[2026-10-15T20:45:09.089Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=ee3b01e3-5f26-429b-a3fc-56ddcf28ef7d, Duration=3543ms)
+[2026-10-15T20:45:09.105Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=116e9542-ae68-40ef-80bb-8f9233a0430d)
+[2026-10-15T20:45:09.109Z] 2026-10-15 13:45:09.109 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:09.110Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=116e9542-ae68-40ef-80bb-8f9233a0430d, Duration=6ms)
+[2026-10-15T20:45:09.119Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=ba9759ba-c482-4c41-8618-267b7b686936)
+[2026-10-15T20:45:09.145Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204509Z_decision_layer1_r0c1.md
+[2026-10-15T20:45:09.146Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=ba9759ba-c482-4c41-8618-267b7b686936, Duration=26ms)
+[2026-10-15T20:45:09.158Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1aeb7084-1814-416b-94e2-8c45af2bb15d)
+[2026-10-15T20:45:09.162Z] 2026-10-15 13:45:09.162 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:09.163Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1aeb7084-1814-416b-94e2-8c45af2bb15d, Duration=5ms)
+[2026-10-15T20:45:09.169Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=612dcf8a-9aa8-49cb-b18b-fa1809627862)
+[2026-10-15T20:45:09.179Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=612dcf8a-9aa8-49cb-b18b-fa1809627862, Duration=9ms)
+[2026-10-15T20:45:09.192Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=6813b914-c046-4a96-92e9-0e658860903c)
+[2026-10-15T20:45:09.195Z] 2026-10-15 13:45:09.195 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:09.196Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=6813b914-c046-4a96-92e9-0e658860903c, Duration=4ms)
+[2026-10-15T20:45:09.203Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=cade0eff-b2af-4680-b02a-3395c6180e4a)
+[2026-10-15T20:45:09.217Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=cade0eff-b2af-4680-b02a-3395c6180e4a, Duration=14ms)
+[2026-10-15T20:45:09.231Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=bb63c4c1-2123-49fc-95d4-afa8c223eb47)
+[2026-10-15T20:45:09.235Z] 2026-10-15 13:45:09.235 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:09.236Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=bb63c4c1-2123-49fc-95d4-afa8c223eb47, Duration=5ms)
+[2026-10-15T20:45:09.244Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=a50553cd-6e13-44e7-bed5-42e8f5a6d0a2)
+[2026-10-15T20:45:12.505Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204512Z_trial_layer2_r0c0_attempt_1.md
+[2026-10-15T20:45:12.505Z] [tokens] prompt=1435 completion=307 total=1742 mutation_failed=False
+[2026-10-15T20:45:12.506Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=a50553cd-6e13-44e7-bed5-42e8f5a6d0a2, Duration=3261ms)
+[2026-10-15T20:45:12.522Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1b218e75-e561-4c9f-bc7c-56929ff69261)
+[2026-10-15T20:45:12.528Z] 2026-10-15 13:45:12.528 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:12.529Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1b218e75-e561-4c9f-bc7c-56929ff69261, Duration=7ms)
+[2026-10-15T20:45:12.541Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=0af4b6b1-8442-4572-88b7-9612bd592ce5)
+[2026-10-15T20:45:12.564Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204512Z_decision_layer2_r0c0.md
+[2026-10-15T20:45:12.565Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=0af4b6b1-8442-4572-88b7-9612bd592ce5, Duration=23ms)
+[2026-10-15T20:45:12.594Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7ca559e7-7715-485c-94b6-333ce5940d10)
+[2026-10-15T20:45:12.600Z] 2026-10-15 13:45:12.600 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:12.601Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7ca559e7-7715-485c-94b6-333ce5940d10, Duration=8ms)
+[2026-10-15T20:45:12.613Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=e8672f93-1694-4c60-9736-7777e5c44bca)
+[2026-10-15T20:45:12.621Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=e8672f93-1694-4c60-9736-7777e5c44bca, Duration=8ms)
+[2026-10-15T20:45:12.636Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=5c938754-38a6-4fe3-8e74-327330b2a9f5)
+[2026-10-15T20:45:12.642Z] 2026-10-15 13:45:12.642 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:12.643Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=5c938754-38a6-4fe3-8e74-327330b2a9f5, Duration=7ms)
+[2026-10-15T20:45:12.654Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=33598b94-ce4e-4084-84b5-566757cbdccf)
+[2026-10-15T20:45:12.668Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=33598b94-ce4e-4084-84b5-566757cbdccf, Duration=14ms)
+[2026-10-15T20:45:12.685Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7648875b-788e-446a-b153-4e8b994789c0)
+[2026-10-15T20:45:12.689Z] 2026-10-15 13:45:12.689 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:12.690Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7648875b-788e-446a-b153-4e8b994789c0, Duration=5ms)
+[2026-10-15T20:45:12.702Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=0161b991-3fb4-459e-8a0e-c22427167724)
+[2026-10-15T20:45:16.081Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204516Z_trial_layer2_r1c0_attempt_1.md
+[2026-10-15T20:45:16.081Z] [tokens] prompt=1423 completion=309 total=1732 mutation_failed=False
+[2026-10-15T20:45:16.082Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=0161b991-3fb4-459e-8a0e-c22427167724, Duration=3380ms)
+[2026-10-15T20:45:16.095Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=bf233c6b-c207-497e-98fd-9083933d310d)
+[2026-10-15T20:45:16.099Z] 2026-10-15 13:45:16.099 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:16.100Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=bf233c6b-c207-497e-98fd-9083933d310d, Duration=5ms)
+[2026-10-15T20:45:16.105Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=72735b6f-0aec-4180-87d1-43640e3ef700)
+[2026-10-15T20:45:16.130Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204516Z_decision_layer2_r1c0.md
+[2026-10-15T20:45:16.130Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=72735b6f-0aec-4180-87d1-43640e3ef700, Duration=24ms)
+[2026-10-15T20:45:16.148Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=81416d21-be6d-4d85-9425-0f2333cf99dd)
+[2026-10-15T20:45:16.152Z] 2026-10-15 13:45:16.152 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:16.153Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=81416d21-be6d-4d85-9425-0f2333cf99dd, Duration=5ms)
+[2026-10-15T20:45:16.160Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=dc2a8c20-60fb-4240-a74e-44a5ea17b505)
+[2026-10-15T20:45:16.167Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=dc2a8c20-60fb-4240-a74e-44a5ea17b505, Duration=6ms)
+[2026-10-15T20:45:16.179Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=364d4d3f-593e-40de-bfe1-048c17c3d6b7)
+[2026-10-15T20:45:16.183Z] 2026-10-15 13:45:16.183 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:16.184Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=364d4d3f-593e-40de-bfe1-048c17c3d6b7, Duration=5ms)
+[2026-10-15T20:45:16.191Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=17825714-4fba-4581-9072-f58708cf3677)
+[2026-10-15T20:45:16.202Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=17825714-4fba-4581-9072-f58708cf3677, Duration=11ms)
+[2026-10-15T20:45:16.214Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=59833c86-112f-4a78-8fa6-fb7d4fa8697e)
+[2026-10-15T20:45:16.218Z] 2026-10-15 13:45:16.218 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:16.219Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=59833c86-112f-4a78-8fa6-fb7d4fa8697e, Duration=5ms)
+[2026-10-15T20:45:16.226Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=23c52952-27e9-4478-90db-b3647369488c)
+[2026-10-15T20:45:19.407Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204519Z_trial_head_attempt_1.md
+[2026-10-15T20:45:19.407Z] [tokens] prompt=1434 completion=245 total=1679 mutation_failed=False
+[2026-10-15T20:45:19.407Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=23c52952-27e9-4478-90db-b3647369488c, Duration=3181ms)
+[2026-10-15T20:45:19.422Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=3f763845-8645-492a-a206-acc27563dd9c)
+[2026-10-15T20:45:19.426Z] 2026-10-15 13:45:19.426 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:19.427Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=3f763845-8645-492a-a206-acc27563dd9c, Duration=5ms)
+[2026-10-15T20:45:19.434Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=e227ed14-033f-4a7a-8914-263832ad5c4c)
+[2026-10-15T20:45:19.453Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204519Z_decision_head.md
+[2026-10-15T20:45:19.453Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=e227ed14-033f-4a7a-8914-263832ad5c4c, Duration=19ms)
+[2026-10-15T20:45:19.465Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=32fc603f-fd8d-4eb2-80d6-29b7d0d89953)
+[2026-10-15T20:45:19.474Z] 2026-10-15 13:45:19.474 durabletask-worker INFO: 0e6e7a6a49a44a6182dcd8a350237763: Orchestration modular_model_orchestrator completed with status: COMPLETED
+[2026-10-15T20:45:19.477Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=32fc603f-fd8d-4eb2-80d6-29b7d0d89953, Duration=11ms)
+[2026-10-15T20:45:23.834Z] Executing 'Functions.start_optimize_loop' (Reason='This function was programmatically called via the host APIs.', Id=cc074345-94b6-418f-a5f4-d907c3427772)
+[2026-10-15T20:45:23.844Z] 2026-10-15 13:45:23.844 durabletask-async_client INFO: Starting new 'modular_model_orchestrator' instance with ID = 'a710781cbbe540968d15eb67a7bef3e7'.
+[2026-10-15T20:45:23.862Z] INFO:     127.0.0.1:0 - "POST /api/orchestrators/modular_model_orchestrator HTTP/1.1" 202 Accepted
+[2026-10-15T20:45:23.865Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=c5202fc4-7349-4479-bf80-a181f893ff0d)
+[2026-10-15T20:45:23.866Z] Executed 'Functions.start_optimize_loop' (Succeeded, Id=cc074345-94b6-418f-a5f4-d907c3427772, Duration=32ms)
+[2026-10-15T20:45:23.867Z] 2026-10-15 13:45:23.866 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator <unknown> yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:23.868Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=c5202fc4-7349-4479-bf80-a181f893ff0d, Duration=2ms)
+[2026-10-15T20:45:23.875Z] Executing 'Functions.activity_gateway_read_meta' (Reason='(null)', Id=aa7cf8b3-6746-4cdc-b04a-d971ee887d2f)
+[2026-10-15T20:45:23.882Z] Executed 'Functions.activity_gateway_read_meta' (Succeeded, Id=aa7cf8b3-6746-4cdc-b04a-d971ee887d2f, Duration=7ms)
+[2026-10-15T20:45:23.891Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=88a313d9-0bc9-40a4-822d-1d900ba635e7)
+[2026-10-15T20:45:23.892Z] 2026-10-15 13:45:23.892 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:23.893Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=88a313d9-0bc9-40a4-822d-1d900ba635e7, Duration=2ms)
+[2026-10-15T20:45:23.900Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=fadf3338-11f6-4ac0-a3b6-ad5f3d32fa86)
+[2026-10-15T20:45:23.907Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=fadf3338-11f6-4ac0-a3b6-ad5f3d32fa86, Duration=6ms)
+[2026-10-15T20:45:23.914Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=fa511df6-3303-479a-856c-03a9f3be41ec)
+[2026-10-15T20:45:23.915Z] 2026-10-15 13:45:23.915 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:23.916Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=fa511df6-3303-479a-856c-03a9f3be41ec, Duration=2ms)
+[2026-10-15T20:45:23.923Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=15afdc16-19f5-48d5-9ccc-790e997e5ca5)
+[2026-10-15T20:45:23.933Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=15afdc16-19f5-48d5-9ccc-790e997e5ca5, Duration=10ms)
+[2026-10-15T20:45:23.942Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2fb7e6fd-d90f-4663-8b2d-761a46bf6d3a)
+[2026-10-15T20:45:23.944Z] 2026-10-15 13:45:23.944 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:23.945Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2fb7e6fd-d90f-4663-8b2d-761a46bf6d3a, Duration=2ms)
+[2026-10-15T20:45:23.954Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=7b2e00d9-2748-4b76-9fad-d1d1049de0ff)
+[2026-10-15T20:45:29.027Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204529Z_trial_encode_attempt_1.md
+[2026-10-15T20:45:29.027Z] [tokens] prompt=1301 completion=285 total=1586 mutation_failed=False
+[2026-10-15T20:45:29.028Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=7b2e00d9-2748-4b76-9fad-d1d1049de0ff, Duration=5074ms)
+[2026-10-15T20:45:29.038Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=569c403f-0521-4946-9307-3424e765fc02)
+[2026-10-15T20:45:29.040Z] 2026-10-15 13:45:29.040 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:29.041Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=569c403f-0521-4946-9307-3424e765fc02, Duration=3ms)
+[2026-10-15T20:45:29.049Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=fc7f96aa-db46-486b-b9da-4e2b4dbc1541)
+[2026-10-15T20:45:29.067Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204529Z_decision_encode.md
+[2026-10-15T20:45:29.067Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=fc7f96aa-db46-486b-b9da-4e2b4dbc1541, Duration=18ms)
+[2026-10-15T20:45:29.075Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=4d2fb253-4c33-464d-a5d2-9aab348fae36)
+[2026-10-15T20:45:29.077Z] 2026-10-15 13:45:29.077 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:29.078Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=4d2fb253-4c33-464d-a5d2-9aab348fae36, Duration=2ms)
+[2026-10-15T20:45:29.085Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=0655e196-e6c5-408a-88b6-6163f5b5469d)
+[2026-10-15T20:45:29.092Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=0655e196-e6c5-408a-88b6-6163f5b5469d, Duration=7ms)
+[2026-10-15T20:45:29.100Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=7aece061-73af-41cb-9bf0-22e81f3d78b0)
+[2026-10-15T20:45:29.101Z] 2026-10-15 13:45:29.101 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:29.102Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=7aece061-73af-41cb-9bf0-22e81f3d78b0, Duration=2ms)
+[2026-10-15T20:45:29.109Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=9805869a-093f-4ad8-a199-5173e06a29ae)
+[2026-10-15T20:45:29.120Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=9805869a-093f-4ad8-a199-5173e06a29ae, Duration=11ms)
+[2026-10-15T20:45:29.127Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=ff46c7df-63d3-4b23-88a2-356717becacd)
+[2026-10-15T20:45:29.129Z] 2026-10-15 13:45:29.129 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:29.130Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=ff46c7df-63d3-4b23-88a2-356717becacd, Duration=3ms)
+[2026-10-15T20:45:29.138Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=9a4ac12d-85ea-4b3d-a1ac-a2e6aba1d173)
+[2026-10-15T20:45:32.931Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204532Z_trial_decode_attempt_1.md
+[2026-10-15T20:45:32.931Z] [tokens] prompt=1360 completion=320 total=1680 mutation_failed=False
+[2026-10-15T20:45:32.931Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=9a4ac12d-85ea-4b3d-a1ac-a2e6aba1d173, Duration=3793ms)
+[2026-10-15T20:45:32.941Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2aff0a4b-385c-4299-ab55-d61437e79a0e)
+[2026-10-15T20:45:32.943Z] 2026-10-15 13:45:32.943 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:32.944Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2aff0a4b-385c-4299-ab55-d61437e79a0e, Duration=3ms)
+[2026-10-15T20:45:32.954Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=dbffcd26-809e-44a5-aa3c-1b7b7b50fbbd)
+[2026-10-15T20:45:32.972Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204532Z_decision_decode.md
+[2026-10-15T20:45:32.973Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=dbffcd26-809e-44a5-aa3c-1b7b7b50fbbd, Duration=19ms)
+[2026-10-15T20:45:32.982Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=8494fae4-1114-4342-b0ec-5785f76c8be0)
+[2026-10-15T20:45:32.984Z] 2026-10-15 13:45:32.984 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:32.986Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=8494fae4-1114-4342-b0ec-5785f76c8be0, Duration=3ms)
+[2026-10-15T20:45:32.994Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=fbd16f78-4691-4543-a7dd-de4921f61f80)
+[2026-10-15T20:45:33.001Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=fbd16f78-4691-4543-a7dd-de4921f61f80, Duration=7ms)
+[2026-10-15T20:45:33.010Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2df6e0d4-680e-45c3-a527-154b4d5bf215)
+[2026-10-15T20:45:33.013Z] 2026-10-15 13:45:33.013 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:33.014Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2df6e0d4-680e-45c3-a527-154b4d5bf215, Duration=3ms)
+[2026-10-15T20:45:33.022Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=c8e0edbd-5ddd-4ef3-9409-ab5711e02803)
+[2026-10-15T20:45:33.033Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=c8e0edbd-5ddd-4ef3-9409-ab5711e02803, Duration=11ms)
+[2026-10-15T20:45:33.043Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=4283b207-a958-450d-9e7d-75ea441bc0e7)
+[2026-10-15T20:45:33.045Z] 2026-10-15 13:45:33.045 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:33.046Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=4283b207-a958-450d-9e7d-75ea441bc0e7, Duration=3ms)
+[2026-10-15T20:45:33.053Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=beb8a8f0-da31-4fe5-8e75-07e4d9548193)
+[2026-10-15T20:45:35.764Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204535Z_trial_encode_attempt_1.md
+[2026-10-15T20:45:35.764Z] [tokens] prompt=1384 completion=284 total=1668 mutation_failed=False
+[2026-10-15T20:45:35.764Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=beb8a8f0-da31-4fe5-8e75-07e4d9548193, Duration=2711ms)
+[2026-10-15T20:45:35.774Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=549ac5a4-5597-4a6d-a326-0d841cc7056e)
+[2026-10-15T20:45:35.777Z] 2026-10-15 13:45:35.777 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:35.778Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=549ac5a4-5597-4a6d-a326-0d841cc7056e, Duration=3ms)
+[2026-10-15T20:45:35.785Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=cd04e2e9-5a75-44b9-b71e-b67ec720c929)
+[2026-10-15T20:45:35.802Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204535Z_decision_encode.md
+[2026-10-15T20:45:35.802Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=cd04e2e9-5a75-44b9-b71e-b67ec720c929, Duration=17ms)
+[2026-10-15T20:45:35.810Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=07a8f491-f4cd-499c-879b-9ac8a5704032)
+[2026-10-15T20:45:35.813Z] 2026-10-15 13:45:35.813 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:35.814Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=07a8f491-f4cd-499c-879b-9ac8a5704032, Duration=3ms)
+[2026-10-15T20:45:35.820Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=2f0213cc-f550-4774-a9f2-328eab5b72d0)
+[2026-10-15T20:45:35.827Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=2f0213cc-f550-4774-a9f2-328eab5b72d0, Duration=6ms)
+[2026-10-15T20:45:35.836Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d968d1d3-9306-4624-9779-288f18fa5be1)
+[2026-10-15T20:45:35.839Z] 2026-10-15 13:45:35.839 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:35.840Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d968d1d3-9306-4624-9779-288f18fa5be1, Duration=4ms)
+[2026-10-15T20:45:35.847Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=bc48b878-a213-433d-b716-bba8effc860d)
+[2026-10-15T20:45:35.858Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=bc48b878-a213-433d-b716-bba8effc860d, Duration=10ms)
+[2026-10-15T20:45:35.867Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b740f536-9ca4-43ab-b996-5a9f5cc5ad7b)
+[2026-10-15T20:45:35.869Z] 2026-10-15 13:45:35.869 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:35.870Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b740f536-9ca4-43ab-b996-5a9f5cc5ad7b, Duration=3ms)
+[2026-10-15T20:45:35.877Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=9c3309df-ea43-44f1-bdb9-a028041ee22d)
+[2026-10-15T20:45:38.887Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204538Z_trial_decode_attempt_1.md
+[2026-10-15T20:45:38.887Z] [tokens] prompt=1313 completion=304 total=1617 mutation_failed=False
+[2026-10-15T20:45:38.888Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=9c3309df-ea43-44f1-bdb9-a028041ee22d, Duration=3010ms)
+[2026-10-15T20:45:38.900Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=48280d30-a9f2-4d84-9edb-c2e6ef7d20cc)
+[2026-10-15T20:45:38.903Z] 2026-10-15 13:45:38.902 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:38.904Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=48280d30-a9f2-4d84-9edb-c2e6ef7d20cc, Duration=4ms)
+[2026-10-15T20:45:38.911Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=d0d1487c-9eef-49e0-967a-3d5d5dfd2892)
+[2026-10-15T20:45:38.938Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204538Z_decision_decode.md
+[2026-10-15T20:45:38.939Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=d0d1487c-9eef-49e0-967a-3d5d5dfd2892, Duration=27ms)
+[2026-10-15T20:45:38.951Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2a044e00-4542-4dae-b91d-15a8933315eb)
+[2026-10-15T20:45:38.954Z] 2026-10-15 13:45:38.954 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:38.955Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2a044e00-4542-4dae-b91d-15a8933315eb, Duration=4ms)
+[2026-10-15T20:45:38.963Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=807db49a-8765-4a3b-8548-56ea2db98422)
+[2026-10-15T20:45:38.970Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=807db49a-8765-4a3b-8548-56ea2db98422, Duration=7ms)
+[2026-10-15T20:45:38.982Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=66ba90ce-1d7b-4c86-889d-0e8358517f44)
+[2026-10-15T20:45:38.986Z] 2026-10-15 13:45:38.986 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:38.987Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=66ba90ce-1d7b-4c86-889d-0e8358517f44, Duration=6ms)
+[2026-10-15T20:45:38.995Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=b77089e4-858e-4eeb-8945-f10eb7b39507)
+[2026-10-15T20:45:39.008Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=b77089e4-858e-4eeb-8945-f10eb7b39507, Duration=13ms)
+[2026-10-15T20:45:39.020Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1227b204-50d5-45c5-b60b-c67b90874349)
+[2026-10-15T20:45:39.023Z] 2026-10-15 13:45:39.023 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:39.024Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1227b204-50d5-45c5-b60b-c67b90874349, Duration=4ms)
+[2026-10-15T20:45:39.033Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=be056f03-4b35-4430-a067-3437e90ad9e4)
+[2026-10-15T20:45:42.808Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204542Z_trial_encode_attempt_1.md
+[2026-10-15T20:45:42.808Z] [tokens] prompt=1301 completion=277 total=1578 mutation_failed=False
+[2026-10-15T20:45:42.808Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=be056f03-4b35-4430-a067-3437e90ad9e4, Duration=3775ms)
+[2026-10-15T20:45:42.820Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=678a04b8-323e-4a1e-8a00-49eb98254f57)
+[2026-10-15T20:45:42.823Z] 2026-10-15 13:45:42.823 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:42.824Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=678a04b8-323e-4a1e-8a00-49eb98254f57, Duration=4ms)
+[2026-10-15T20:45:42.833Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=02770025-a613-4f5f-a44d-d4d721de0544)
+[2026-10-15T20:45:42.855Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204542Z_decision_encode.md
+[2026-10-15T20:45:42.855Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=02770025-a613-4f5f-a44d-d4d721de0544, Duration=22ms)
+[2026-10-15T20:45:42.868Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=41971fe2-35ae-4cf0-92ca-2a3c43f3e59a)
+[2026-10-15T20:45:42.872Z] 2026-10-15 13:45:42.871 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:42.872Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=41971fe2-35ae-4cf0-92ca-2a3c43f3e59a, Duration=4ms)
+[2026-10-15T20:45:42.879Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=17b1fd76-b1f6-4066-a549-1d7ec396b043)
+[2026-10-15T20:45:42.888Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=17b1fd76-b1f6-4066-a549-1d7ec396b043, Duration=8ms)
+[2026-10-15T20:45:42.899Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=e83d31bf-a5d4-4bbe-9da6-695880ab7206)
+[2026-10-15T20:45:42.903Z] 2026-10-15 13:45:42.903 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:42.904Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=e83d31bf-a5d4-4bbe-9da6-695880ab7206, Duration=4ms)
+[2026-10-15T20:45:42.913Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=a8f46733-2a4b-465f-9695-a9480aa8af3a)
+[2026-10-15T20:45:42.929Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=a8f46733-2a4b-465f-9695-a9480aa8af3a, Duration=16ms)
+[2026-10-15T20:45:42.941Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=23adda8c-19c4-434c-9054-40f80468a259)
+[2026-10-15T20:45:42.945Z] 2026-10-15 13:45:42.945 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:42.946Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=23adda8c-19c4-434c-9054-40f80468a259, Duration=4ms)
+[2026-10-15T20:45:42.955Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=77a59e29-909b-4b4e-82f4-9e37fd855a83)
+[2026-10-15T20:45:46.247Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204546Z_trial_decode_attempt_1.md
+[2026-10-15T20:45:46.247Z] [tokens] prompt=1313 completion=310 total=1623 mutation_failed=False
+[2026-10-15T20:45:46.247Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=77a59e29-909b-4b4e-82f4-9e37fd855a83, Duration=3292ms)
+[2026-10-15T20:45:46.257Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=1802660e-049e-426a-945d-5e1d2f502809)
+[2026-10-15T20:45:46.260Z] 2026-10-15 13:45:46.260 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:46.261Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=1802660e-049e-426a-945d-5e1d2f502809, Duration=4ms)
+[2026-10-15T20:45:46.267Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=e471bd68-e7c5-4e1f-8746-3f22b7e99606)
+[2026-10-15T20:45:46.291Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204546Z_decision_decode.md
+[2026-10-15T20:45:46.291Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=e471bd68-e7c5-4e1f-8746-3f22b7e99606, Duration=23ms)
+[2026-10-15T20:45:46.301Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=2543f385-ed37-41a0-9745-ffe57beec05f)
+[2026-10-15T20:45:46.304Z] 2026-10-15 13:45:46.304 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:46.305Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=2543f385-ed37-41a0-9745-ffe57beec05f, Duration=4ms)
+[2026-10-15T20:45:46.335Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=bc64518c-43db-4308-a808-86b660d8c91a)
+[2026-10-15T20:45:46.342Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=bc64518c-43db-4308-a808-86b660d8c91a, Duration=7ms)
+[2026-10-15T20:45:46.352Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a0737420-90b9-45a5-acd8-41bcb3f079c3)
+[2026-10-15T20:45:46.355Z] 2026-10-15 13:45:46.355 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:46.356Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a0737420-90b9-45a5-acd8-41bcb3f079c3, Duration=4ms)
+[2026-10-15T20:45:46.364Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=5eb96ed5-51c9-4efe-9de7-ecc45eac7a07)
+[2026-10-15T20:45:46.375Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=5eb96ed5-51c9-4efe-9de7-ecc45eac7a07, Duration=11ms)
+[2026-10-15T20:45:46.385Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9214e31f-d655-40d6-86ce-0610e5aae2ae)
+[2026-10-15T20:45:46.388Z] 2026-10-15 13:45:46.388 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:46.389Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9214e31f-d655-40d6-86ce-0610e5aae2ae, Duration=4ms)
+[2026-10-15T20:45:46.396Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=9bae4003-f86c-48af-8a94-830996249941)
+[2026-10-15T20:45:49.397Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204549Z_trial_encode_attempt_1.md
+[2026-10-15T20:45:49.397Z] [tokens] prompt=1420 completion=287 total=1707 mutation_failed=False
+[2026-10-15T20:45:49.398Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=9bae4003-f86c-48af-8a94-830996249941, Duration=3002ms)
+[2026-10-15T20:45:49.412Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=f50f8f9a-851a-4148-8bac-a2d451c68ade)
+[2026-10-15T20:45:49.416Z] 2026-10-15 13:45:49.415 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:49.417Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=f50f8f9a-851a-4148-8bac-a2d451c68ade, Duration=4ms)
+[2026-10-15T20:45:49.425Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=c7fac360-f203-4df8-bd81-b5242dd05e3d)
+[2026-10-15T20:45:49.446Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204549Z_decision_encode.md
+[2026-10-15T20:45:49.447Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=c7fac360-f203-4df8-bd81-b5242dd05e3d, Duration=21ms)
+[2026-10-15T20:45:49.459Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=046467fc-9cb0-4b51-b97c-6b09f52ceabf)
+[2026-10-15T20:45:49.463Z] 2026-10-15 13:45:49.463 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:49.464Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=046467fc-9cb0-4b51-b97c-6b09f52ceabf, Duration=4ms)
+[2026-10-15T20:45:49.471Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=25868829-ec4d-4c8e-9b79-88f1ab3a4de4)
+[2026-10-15T20:45:49.479Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=25868829-ec4d-4c8e-9b79-88f1ab3a4de4, Duration=8ms)
+[2026-10-15T20:45:49.490Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=9ddc56a5-2fcc-4e9c-a567-d2c8c520c95f)
+[2026-10-15T20:45:49.493Z] 2026-10-15 13:45:49.493 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:49.494Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=9ddc56a5-2fcc-4e9c-a567-d2c8c520c95f, Duration=5ms)
+[2026-10-15T20:45:49.501Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=37c3d211-80e5-4a7d-9a87-2a63fbcaa536)
+[2026-10-15T20:45:49.512Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=37c3d211-80e5-4a7d-9a87-2a63fbcaa536, Duration=11ms)
+[2026-10-15T20:45:49.524Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=d21cb9cb-d4a0-4d95-8550-e996bc1c97cb)
+[2026-10-15T20:45:49.528Z] 2026-10-15 13:45:49.528 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:49.529Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=d21cb9cb-d4a0-4d95-8550-e996bc1c97cb, Duration=4ms)
+[2026-10-15T20:45:49.536Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=76585ca5-8c3e-4bb3-8b57-4117d434b88d)
+[2026-10-15T20:45:54.043Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204554Z_trial_decode_attempt_1.md
+[2026-10-15T20:45:54.043Z] [tokens] prompt=1413 completion=312 total=1725 mutation_failed=False
+[2026-10-15T20:45:54.044Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=76585ca5-8c3e-4bb3-8b57-4117d434b88d, Duration=4507ms)
+[2026-10-15T20:45:54.059Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=b24daef4-e310-4b22-9736-5d583126efca)
+[2026-10-15T20:45:54.063Z] 2026-10-15 13:45:54.063 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:54.064Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=b24daef4-e310-4b22-9736-5d583126efca, Duration=5ms)
+[2026-10-15T20:45:54.072Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=d1dbad73-ea6a-4370-9dea-fa8cec7ee065)
+[2026-10-15T20:45:54.093Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204554Z_decision_decode.md
+[2026-10-15T20:45:54.093Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=d1dbad73-ea6a-4370-9dea-fa8cec7ee065, Duration=20ms)
+[2026-10-15T20:45:54.104Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=3da92d02-46ef-4390-9743-aae28f49d803)
+[2026-10-15T20:45:54.108Z] 2026-10-15 13:45:54.108 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:54.109Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=3da92d02-46ef-4390-9743-aae28f49d803, Duration=5ms)
+[2026-10-15T20:45:54.116Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=a90f5032-bda4-42ad-ba2d-fa1dace4d869)
+[2026-10-15T20:45:54.123Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=a90f5032-bda4-42ad-ba2d-fa1dace4d869, Duration=7ms)
+[2026-10-15T20:45:54.135Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=6073f49b-b127-4a9d-b627-793f7d4e4131)
+[2026-10-15T20:45:54.138Z] 2026-10-15 13:45:54.138 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:54.139Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=6073f49b-b127-4a9d-b627-793f7d4e4131, Duration=4ms)
+[2026-10-15T20:45:54.147Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=91241471-8b90-4df7-93ea-91d2b8db2c8c)
+[2026-10-15T20:45:54.159Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=91241471-8b90-4df7-93ea-91d2b8db2c8c, Duration=12ms)
+[2026-10-15T20:45:54.171Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=8193739e-1df9-40ba-ab5e-630c79c9dc3c)
+[2026-10-15T20:45:54.175Z] 2026-10-15 13:45:54.175 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:54.176Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=8193739e-1df9-40ba-ab5e-630c79c9dc3c, Duration=5ms)
+[2026-10-15T20:45:54.183Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=fa8c4db7-18a5-46be-af6c-7f91fefe0473)
+[2026-10-15T20:45:57.056Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204557Z_trial_encode_attempt_1.md
+[2026-10-15T20:45:57.056Z] [tokens] prompt=1401 completion=271 total=1672 mutation_failed=False
+[2026-10-15T20:45:57.056Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=fa8c4db7-18a5-46be-af6c-7f91fefe0473, Duration=2873ms)
+[2026-10-15T20:45:57.069Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=0a09a925-8f48-409d-a1a3-75c2c039a1af)
+[2026-10-15T20:45:57.073Z] 2026-10-15 13:45:57.073 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:57.074Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=0a09a925-8f48-409d-a1a3-75c2c039a1af, Duration=5ms)
+[2026-10-15T20:45:57.081Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=e0875957-63cc-4484-a8ca-48c90668a095)
+[2026-10-15T20:45:57.100Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204557Z_decision_encode.md
+[2026-10-15T20:45:57.100Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=e0875957-63cc-4484-a8ca-48c90668a095, Duration=19ms)
+[2026-10-15T20:45:57.112Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=bbcc8857-7c24-4ae3-8942-1d4dfdd8e39a)
+[2026-10-15T20:45:57.117Z] 2026-10-15 13:45:57.117 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:57.118Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=bbcc8857-7c24-4ae3-8942-1d4dfdd8e39a, Duration=6ms)
+[2026-10-15T20:45:57.125Z] Executing 'Functions.activity_gateway_read_slice' (Reason='(null)', Id=9d1071b5-4cfa-4ce3-939f-eb25cc6d85c9)
+[2026-10-15T20:45:57.132Z] Executed 'Functions.activity_gateway_read_slice' (Succeeded, Id=9d1071b5-4cfa-4ce3-939f-eb25cc6d85c9, Duration=7ms)
+[2026-10-15T20:45:57.143Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=abf14eb9-a4c2-45d6-bde1-5760fef0abe8)
+[2026-10-15T20:45:57.147Z] 2026-10-15 13:45:57.147 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:57.148Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=abf14eb9-a4c2-45d6-bde1-5760fef0abe8, Duration=5ms)
+[2026-10-15T20:45:57.154Z] Executing 'Functions.activity_gateway_compile_prompt' (Reason='(null)', Id=a504bdeb-0761-4698-9492-1b218960c355)
+[2026-10-15T20:45:57.166Z] Executed 'Functions.activity_gateway_compile_prompt' (Succeeded, Id=a504bdeb-0761-4698-9492-1b218960c355, Duration=11ms)
+[2026-10-15T20:45:57.186Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=a0ea1fe6-b992-4b2b-ac0f-c32e2d93b19f)
+[2026-10-15T20:45:57.190Z] 2026-10-15 13:45:57.190 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:45:57.191Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=a0ea1fe6-b992-4b2b-ac0f-c32e2d93b19f, Duration=15ms)
+[2026-10-15T20:45:57.200Z] Executing 'Functions.activity_gateway_synthesize' (Reason='(null)', Id=5761189f-8573-49aa-92fa-22ac9d4d99f8)
+[2026-10-15T20:46:01.536Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204601Z_trial_decode_attempt_1.md
+[2026-10-15T20:46:01.536Z] [tokens] prompt=1313 completion=329 total=1642 mutation_failed=False
+[2026-10-15T20:46:01.537Z] Executed 'Functions.activity_gateway_synthesize' (Succeeded, Id=5761189f-8573-49aa-92fa-22ac9d4d99f8, Duration=4336ms)
+[2026-10-15T20:46:01.553Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=485ce1ba-c179-4111-911c-70eb891241ad)
+[2026-10-15T20:46:01.559Z] 2026-10-15 13:46:01.559 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestrator modular_model_orchestrator yielded with 1 task(s) and 0 event(s) outstanding.
+[2026-10-15T20:46:01.560Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=485ce1ba-c179-4111-911c-70eb891241ad, Duration=7ms)
+[2026-10-15T20:46:01.569Z] Executing 'Functions.activity_gateway_commit_tournament' (Reason='(null)', Id=474cd46b-4dbf-4ac3-9970-4d8de1acc09c)
+[2026-10-15T20:46:01.592Z] [report] C:\Users\Cutie Magic 500\stevejob\stevejob\reports\20261015T204601Z_decision_decode.md
+[2026-10-15T20:46:01.593Z] Executed 'Functions.activity_gateway_commit_tournament' (Succeeded, Id=474cd46b-4dbf-4ac3-9970-4d8de1acc09c, Duration=24ms)
+[2026-10-15T20:46:01.604Z] Executing 'Functions.modular_model_orchestrator' (Reason='(null)', Id=f3935676-2326-4035-b6d7-801e217de3d2)
+[2026-10-15T20:46:01.608Z] 2026-10-15 13:46:01.608 durabletask-worker INFO: a710781cbbe540968d15eb67a7bef3e7: Orchestration modular_model_orchestrator completed with status: COMPLETED
+[2026-10-15T20:46:01.610Z] Executed 'Functions.modular_model_orchestrator' (Succeeded, Id=f3935676-2326-4035-b6d7-801e217de3d2, Duration=6ms)

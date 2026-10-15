@@ -60,8 +60,9 @@ public:
         std::lock_guard<std::mutex> lock(gate());
         stevejob::models::LoadedCheckpoint loaded = stevejob::models::ModelCheckpoint::open(target_blob);
         stevejob::storage::AzuriteClient client;
-        const stevejob::compiler::PromptCompilerOptions options = prompt_options(visible_history, int_bound, retry_note);
         return stevejob::models::ArchitectureCatalog::visit(std::move(loaded.model), [&](auto& model) {
+            const stevejob::compiler::PromptCompilerOptions options =
+                prompt_options(model.config(), visible_history, int_bound, retry_note);
             model.bind_journal(0);
             stevejob::models::ModelCheckpoint::read_journal(
                 client,
@@ -98,12 +99,13 @@ private:
         return mutex;
     }
 
-    static stevejob::compiler::PromptCompilerOptions prompt_options(std::size_t visible_history,
+    static stevejob::compiler::PromptCompilerOptions prompt_options(const stevejob::models::LearningConfig& cfg,
+                                                                    std::size_t visible_history,
                                                                     int int_bound,
                                                                     const std::string& retry_note) {
         stevejob::compiler::PromptCompilerOptions options;
-        options.visible_history_count = visible_history == 0 ? 3 : visible_history;
-        options.int_bound = int_bound == 0 ? 25 : int_bound;
+        options.visible_history_count = visible_history == 0 ? cfg.visible_history_count : visible_history;
+        options.int_bound = int_bound == 0 ? cfg.int_bound : int_bound;
         options.retry_note = retry_note;
         return options;
     }

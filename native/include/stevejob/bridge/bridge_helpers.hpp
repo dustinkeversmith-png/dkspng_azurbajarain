@@ -2,9 +2,10 @@
 
 #include "stevejob/math/linear_algebra.hpp"
 #include "stevejob/math/tensor_stats.hpp"
-#include "stevejob/messaging/sjc1_scheme.hpp"
+#include "stevejob/models/architecture_catalog.hpp"
 #include "stevejob/models/neural_network.hpp"
 #include "stevejob/models/checkpoint_registry.hpp"
+#include "stevejob/storage/json_text.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -131,13 +132,27 @@ public:
 
 class SchemaLookup {
 public:
-    static const stevejob::models::SchemaMap& from_object(py::handle value) {
-        stevejob::models::CheckpointRegistry& registry = stevejob::models::CheckpointRegistry::instance();
+    static std::string architecture_from_object(py::handle value) {
         const char* tag = stevejob::models::CheckpointRegistry::model_tag();
         if (py::isinstance<py::dict>(value)) {
             py::dict object = py::reinterpret_borrow<py::dict>(value);
             if (object.contains(tag) && py::isinstance<py::str>(object[tag])) {
-                return registry.find(py::cast<std::string>(object[tag]));
+                return py::cast<std::string>(object[tag]);
+            }
+        }
+        return "";
+    }
+
+    static stevejob::models::SchemaMap from_object(py::handle value) {
+        stevejob::models::CheckpointRegistry& registry = stevejob::models::CheckpointRegistry::instance();
+        const std::string arch = architecture_from_object(value);
+        if (!arch.empty()) {
+            if (registry.contains(arch)) {
+                return registry.find(arch);
+            }
+            if (arch == "mlp_regressor" || arch == "bottleneck_ae" || arch == "demo_scale") {
+                return stevejob::models::ArchitectureCatalog::make(
+                    arch, [](const auto& model) { return model.checkpoint_schema(); });
             }
         }
         return registry.fallback();
@@ -147,7 +162,7 @@ public:
 class CheckpointBridge {
 public:
     static std::vector<double> collect_parameters(py::handle layers_value, bool enforce, std::size_t max_parameters) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers_value);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers_value);
         py::dict layers = ValueCodec::as_dict(layers_value, "checkpoint must be an object");
         std::vector<double> values;
         for (auto item : layers) {
@@ -174,12 +189,13 @@ public:
     }
 
     static py::dict checkpoint_summary(py::handle layers, std::size_t max_parameters) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers);
         return FieldWriter::from_fields(schema.compile_summary(collect_parameters(layers, true, max_parameters)));
     }
 
     static py::dict layer_diagnostics(py::handle layers_value) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers_value);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers_value);
+        const std::string arch = SchemaLookup::architecture_from_object(layers_value);
         py::dict layers = ValueCodec::as_dict(layers_value, "checkpoint must be an object");
         py::dict diagnostics;
         for (auto item : layers) {
@@ -188,8 +204,10 @@ public:
                 continue;
             }
             py::dict layer = ValueCodec::as_dict(item.second, "layer " + name + " must be an object");
-            stevejob::math::TensorStats stats;
-            stats.compute(matrix_slot(schema, layer, name));
+            const std::vector<std::vector<double>> matrix = matrix_slot(schema, layer, name);
+            const stevejob::math::TensorStats stats = stevejob::models::ArchitectureCatalog::make(
+                arch.empty() ? "mlp_regressor" : arch,
+                [&](const auto& model) { return model.compute_layer_stats(matrix); });
             diagnostics[py::str(name)] = FieldWriter::from_fields(
                 schema.compile_diagnostics(stats.mean(), stats.variance(), stats.min_val(), stats.max_val(), stats.count()));
         }
@@ -201,7 +219,7 @@ public:
                                       double learning_rate,
                                       double weight_decay,
                                       double dampening) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers_value);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers_value);
         py::dict layers = ValueCodec::as_dict(layers_value, "checkpoint must be an object");
         py::dict gradients = ValueCodec::as_dict(gradients_value, "gradients must be an object keyed by layer");
         py::dict updated;
@@ -223,7 +241,7 @@ public:
     }
 
     static py::dict receipt_stats(py::handle layers, py::handle outputs_value) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers);
         const stevejob::models::OutputSample outputs = rollup_outputs(outputs_value);
         return FieldWriter::from_fields(schema.compile_receipt(collect_parameters(layers, false, 0), outputs));
     }
@@ -244,7 +262,7 @@ public:
     }
 
     static py::tuple single_layer(py::handle checkpoint_value) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(checkpoint_value);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(checkpoint_value);
         py::dict checkpoint = ValueCodec::as_dict(checkpoint_value, "checkpoint must be an object");
         std::size_t layers = 0;
         py::dict layer;
@@ -268,9 +286,13 @@ public:
     }
 
     static py::bytes pack_checkpoint(py::handle layers_value, py::handle outputs_value) {
-        const stevejob::models::SchemaMap& schema = SchemaLookup::from_object(layers_value);
+        const stevejob::models::SchemaMap schema = SchemaLookup::from_object(layers_value);
+        const std::string arch = SchemaLookup::architecture_from_object(layers_value);
         py::dict layers = ValueCodec::as_dict(layers_value, "checkpoint must be an object");
         stevejob::models::NeuralNetwork model("checkpoint");
+        if (!arch.empty()) {
+            model.architecture = arch;
+        }
         for (auto item : layers) {
             const std::string name = py::cast<std::string>(py::str(item.first));
             if (name == stevejob::models::CheckpointRegistry::model_tag()) {
@@ -303,7 +325,161 @@ public:
         if (!outputs_value.is_none()) {
             model.outputs = py::cast<std::vector<std::vector<double>>>(outputs_value);
         }
-        return py::bytes(stevejob::messaging::SJC1Compressor::instance().pack(model));
+        return py::bytes(stevejob::models::ArchitectureCatalog::make(
+            arch.empty() ? "mlp_regressor" : arch,
+            [&](const auto& arch_model) { return arch_model.container_scheme().pack(model); }));
+    }
+
+    static double parse_dampening(py::handle args_or_value, const std::string& architecture = "") {
+        return stevejob::models::ArchitectureCatalog::make(
+            architecture.empty() ? "mlp_regressor" : architecture,
+            [&](const auto& model) -> double {
+                py::object raw = py::reinterpret_borrow<py::object>(args_or_value);
+                if (py::isinstance<py::dict>(raw)) {
+                    py::dict mapping = py::reinterpret_borrow<py::dict>(raw);
+                    if (mapping.contains("dampening") && !mapping["dampening"].is_none()) {
+                        raw = py::reinterpret_borrow<py::object>(mapping["dampening"]);
+                    } else if (mapping.contains("dampening_text") && !mapping["dampening_text"].is_none()) {
+                        raw = py::reinterpret_borrow<py::object>(mapping["dampening_text"]);
+                    } else {
+                        return 1.0;
+                    }
+                }
+                if (raw.is_none()) {
+                    return 1.0;
+                }
+                if (!py::isinstance<py::bool_>(raw) && (py::isinstance<py::int_>(raw) || py::isinstance<py::float_>(raw))) {
+                    return model.validate_dampening(py::cast<double>(raw));
+                }
+                if (py::isinstance<py::str>(raw)) {
+                    return model.parse_dampening_text(py::cast<std::string>(raw));
+                }
+                ValueCodec::fail("dampening must be a number");
+                return 1.0;
+            });
+    }
+
+    static double parse_learning_rate(py::handle args_or_value, const std::string& architecture = "") {
+        return stevejob::models::ArchitectureCatalog::make(
+            architecture.empty() ? "mlp_regressor" : architecture,
+            [&](const auto& model) -> double {
+                py::object raw = py::reinterpret_borrow<py::object>(args_or_value);
+                if (py::isinstance<py::dict>(raw)) {
+                    py::dict mapping = py::reinterpret_borrow<py::dict>(raw);
+                    raw = ValueCodec::value_or(mapping, "learning_rate", py::none());
+                }
+                if (raw.is_none()) {
+                    return model.validate_learning_rate(model.config().default_learning_rate);
+                }
+                return model.validate_learning_rate(py::cast<double>(raw));
+            });
+    }
+
+    static double parse_weight_decay(py::handle args_or_value, const std::string& architecture = "") {
+        return stevejob::models::ArchitectureCatalog::make(
+            architecture.empty() ? "mlp_regressor" : architecture,
+            [&](const auto& model) -> double {
+                py::object raw = py::reinterpret_borrow<py::object>(args_or_value);
+                if (py::isinstance<py::dict>(raw)) {
+                    py::dict mapping = py::reinterpret_borrow<py::dict>(raw);
+                    raw = ValueCodec::value_or(mapping, "weight_decay", py::none());
+                }
+                if (raw.is_none()) {
+                    return model.validate_weight_decay(model.config().default_weight_decay);
+                }
+                return model.validate_weight_decay(py::cast<double>(raw));
+            });
+    }
+
+    static py::dict parse_gradients(py::handle args_or_value,
+                                    py::handle checkpoint_value = py::none(),
+                                    const std::string& architecture = "") {
+        const std::string arch = !architecture.empty() ? architecture : SchemaLookup::architecture_from_object(checkpoint_value);
+        return stevejob::models::ArchitectureCatalog::make(
+            arch.empty() ? "mlp_regressor" : arch,
+            [&](const auto& model) -> py::dict {
+                py::object raw = py::reinterpret_borrow<py::object>(args_or_value);
+                if (py::isinstance<py::dict>(raw)) {
+                    py::dict mapping = py::reinterpret_borrow<py::dict>(raw);
+                    if (mapping.contains("gradients") && !mapping["gradients"].is_none()) {
+                        raw = py::reinterpret_borrow<py::object>(mapping["gradients"]);
+                    } else if (mapping.contains("gradients_text") && py::isinstance<py::str>(mapping["gradients_text"])) {
+                        raw = py::reinterpret_borrow<py::object>(mapping["gradients_text"]);
+                    }
+                }
+                py::dict parsed;
+                if (py::isinstance<py::str>(raw)) {
+                    const std::string text = py::cast<std::string>(raw);
+                    if (!text.empty()) {
+                        const stevejob::storage::JsonText json = model.parse_gradients_text(text);
+                        parsed = json_to_py_dict(json);
+                    }
+                } else if (py::isinstance<py::dict>(raw)) {
+                    parsed = py::reinterpret_borrow<py::dict>(raw);
+                } else {
+                    ValueCodec::fail("gradients must be an object keyed by layer");
+                }
+                if (py::len(parsed) == 0) {
+                    ValueCodec::fail("gradients must not be empty");
+                }
+                py::dict normalized;
+                py::dict ckpt = py::isinstance<py::dict>(checkpoint_value)
+                                    ? py::reinterpret_borrow<py::dict>(checkpoint_value)
+                                    : py::dict();
+                for (auto item : parsed) {
+                    const std::string layer_name = py::cast<std::string>(py::str(item.first));
+                    if (!py::isinstance<py::dict>(item.second)) {
+                        ValueCodec::fail("gradients for " + layer_name + " must be an object");
+                    }
+                    py::dict layer_grad = py::reinterpret_borrow<py::dict>(item.second);
+                    py::dict out_layer;
+                    std::size_t rows = 1;
+                    std::size_t cols = 1;
+                    if (ckpt.contains(layer_name.c_str()) && py::isinstance<py::dict>(ckpt[layer_name.c_str()])) {
+                        py::dict ckpt_layer = py::reinterpret_borrow<py::dict>(ckpt[layer_name.c_str()]);
+                        if (ckpt_layer.contains("weights") && py::isinstance<py::list>(ckpt_layer["weights"])) {
+                            py::list w = py::reinterpret_borrow<py::list>(ckpt_layer["weights"]);
+                            rows = py::len(w);
+                            if (rows > 0 && ValueCodec::is_sequence(w[0])) {
+                                cols = py::len(w[0]);
+                            }
+                        }
+                        if (ckpt_layer.contains("biases") && py::isinstance<py::list>(ckpt_layer["biases"])) {
+                            cols = py::len(ckpt_layer["biases"]);
+                        }
+                    }
+                    const stevejob::models::SliceRef slice{layer_name, layer_name, 0, 0, 0, rows, cols};
+                    for (auto g_item : layer_grad) {
+                        const std::string slot_key = py::cast<std::string>(py::str(g_item.first));
+                        if (slot_key == "weights" && py::isinstance<py::str>(g_item.second)) {
+                            out_layer["weights"] = py::cast(
+                                model.get_scheme_for_slice(slice).deserialize_matrix(
+                                    py::cast<std::string>(g_item.second), rows, cols));
+                        } else if (slot_key == "biases" && py::isinstance<py::str>(g_item.second)) {
+                            out_layer["biases"] = py::cast(
+                                model.get_bias_scheme(slice).deserialize_vector(
+                                    py::cast<std::string>(g_item.second), cols));
+                        } else {
+                            out_layer[g_item.first] = g_item.second;
+                        }
+                    }
+                    normalized[py::str(layer_name)] = out_layer;
+                }
+                return normalized;
+            });
+    }
+
+    static py::list evaluate_checkpoint_inputs(py::handle checkpoint_value, py::handle inputs_value) {
+        const std::string arch = SchemaLookup::architecture_from_object(checkpoint_value);
+        py::list coerced = ValueCodec::coerce_matrix(inputs_value, "inputs", false);
+        const auto inputs = py::cast<std::vector<std::vector<double>>>(coerced);
+        py::tuple layer = single_layer(checkpoint_value);
+        const auto weights = py::cast<std::vector<std::vector<double>>>(layer[0]);
+        const auto biases = py::cast<std::vector<double>>(layer[1]);
+        const auto outputs = stevejob::models::ArchitectureCatalog::make(
+            arch.empty() ? "mlp_regressor" : arch,
+            [&](const auto& model) { return model.evaluate_layer_inputs(inputs, weights, biases); });
+        return py::cast(outputs);
     }
 
 private:
@@ -400,6 +576,43 @@ private:
             }
         }
         return rollup;
+    }
+
+    static py::object json_to_py_object(const stevejob::storage::JsonText& node) {
+        switch (node.kind) {
+            case stevejob::storage::JsonText::Kind::Null:
+                return py::none();
+            case stevejob::storage::JsonText::Kind::Bool:
+                return py::bool_(node.boolean);
+            case stevejob::storage::JsonText::Kind::Number:
+                if (node.number_is_int) {
+                    return py::int_(node.integer);
+                }
+                return py::float_(node.number);
+            case stevejob::storage::JsonText::Kind::String:
+                return py::str(node.text);
+            case stevejob::storage::JsonText::Kind::Array: {
+                py::list out;
+                for (const auto& item : node.array) {
+                    out.append(json_to_py_object(item));
+                }
+                return out;
+            }
+            case stevejob::storage::JsonText::Kind::Object:
+            default:
+                return json_to_py_dict(node);
+        }
+    }
+
+    static py::dict json_to_py_dict(const stevejob::storage::JsonText& node) {
+        if (node.kind != stevejob::storage::JsonText::Kind::Object) {
+            ValueCodec::fail("expected JSON object");
+        }
+        py::dict out;
+        for (const auto& pair : node.object) {
+            out[py::str(pair.first)] = json_to_py_object(pair.second);
+        }
+        return out;
     }
 
     static py::dict gradient_layer(py::dict gradients, const std::string& name) {

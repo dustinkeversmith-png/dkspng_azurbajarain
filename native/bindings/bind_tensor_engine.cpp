@@ -21,6 +21,64 @@ namespace py = pybind11;
 PYBIND11_MODULE(tensor_engine, module) {
     module.doc() = "Native C++ tensor steps for a tiny perceptron workflow";
 
+    py::class_<stevejob::config::LearningConfig>(module, "LearningConfig")
+        .def(py::init<>())
+        .def_readwrite("max_iterations", &stevejob::config::LearningConfig::max_iterations)
+        .def_readwrite("max_samples", &stevejob::config::LearningConfig::max_samples)
+        .def_readwrite("max_payload_bytes", &stevejob::config::LearningConfig::max_payload_bytes)
+        .def_readwrite("max_cache_entries", &stevejob::config::LearningConfig::max_cache_entries)
+        .def_readwrite("parallel_threshold", &stevejob::config::LearningConfig::parallel_threshold)
+        .def_readwrite("max_candidates", &stevejob::config::LearningConfig::max_candidates)
+        .def_readwrite("max_parameters", &stevejob::config::LearningConfig::max_parameters)
+        .def_readwrite("max_residuals", &stevejob::config::LearningConfig::max_residuals)
+        .def_readwrite("max_anomalies", &stevejob::config::LearningConfig::max_anomalies)
+        .def_readwrite("max_blob_bytes", &stevejob::config::LearningConfig::max_blob_bytes)
+        .def_readwrite("max_learning_rate", &stevejob::config::LearningConfig::max_learning_rate)
+        .def_readwrite("default_learning_rate", &stevejob::config::LearningConfig::default_learning_rate)
+        .def_readwrite("default_weight_decay", &stevejob::config::LearningConfig::default_weight_decay)
+        .def_readwrite("min_dampening", &stevejob::config::LearningConfig::min_dampening)
+        .def_readwrite("max_dampening", &stevejob::config::LearningConfig::max_dampening)
+        .def_readwrite("max_input_rows", &stevejob::config::LearningConfig::max_input_rows)
+        .def_readwrite("max_input_cols", &stevejob::config::LearningConfig::max_input_cols)
+        .def_readwrite("int_bound", &stevejob::config::LearningConfig::int_bound)
+        .def_readwrite("visible_history_count", &stevejob::config::LearningConfig::visible_history_count)
+        .def_readwrite("min_commit_drop", &stevejob::config::LearningConfig::min_commit_drop)
+        .def_readwrite("divergence_threshold", &stevejob::config::LearningConfig::divergence_threshold)
+        .def("to_dict", [](const stevejob::config::LearningConfig& cfg) {
+            py::dict out;
+            out["max_iterations"] = cfg.max_iterations;
+            out["max_samples"] = cfg.max_samples;
+            out["max_payload_bytes"] = cfg.max_payload_bytes;
+            out["max_cache_entries"] = cfg.max_cache_entries;
+            out["parallel_threshold"] = cfg.parallel_threshold;
+            out["max_candidates"] = cfg.max_candidates;
+            out["max_parameters"] = cfg.max_parameters;
+            out["max_residuals"] = cfg.max_residuals;
+            out["max_anomalies"] = cfg.max_anomalies;
+            out["max_blob_bytes"] = cfg.max_blob_bytes;
+            out["max_learning_rate"] = cfg.max_learning_rate;
+            out["default_learning_rate"] = cfg.default_learning_rate;
+            out["default_weight_decay"] = cfg.default_weight_decay;
+            out["min_dampening"] = cfg.min_dampening;
+            out["max_dampening"] = cfg.max_dampening;
+            out["max_input_rows"] = cfg.max_input_rows;
+            out["max_input_cols"] = cfg.max_input_cols;
+            out["int_bound"] = cfg.int_bound;
+            out["visible_history_count"] = cfg.visible_history_count;
+            out["min_commit_drop"] = cfg.min_commit_drop;
+            out["divergence_threshold"] = cfg.divergence_threshold;
+            return out;
+        });
+    module.attr("ModelConfig") = module.attr("LearningConfig");
+    module.def(
+        "model_config",
+        [](const std::string& architecture) {
+            return stevejob::models::ArchitectureCatalog::make(
+                architecture, [](const auto& model) { return model.config(); });
+        },
+        py::arg("architecture") = "mlp_regressor",
+        "Return the default LearningConfig defined by the specified model architecture.");
+
     py::module_ math = module.def_submodule("math", "Layer algebra and matrix statistics");
     py::class_<stevejob::math::TensorStats>(math, "TensorStats")
         .def(py::init<>())
@@ -31,10 +89,15 @@ PYBIND11_MODULE(tensor_engine, module) {
         .def_property_readonly("max_val", &stevejob::math::TensorStats::max_val)
         .def_property_readonly("min_val", &stevejob::math::TensorStats::min_val)
         .def_property_readonly("count", &stevejob::math::TensorStats::count);
-    math.def("compute_layer_stats",
-             &stevejob::math::TensorStats::from_matrix,
-             py::arg("matrix"),
-             "Mean, population variance, and min/max for one layer matrix");
+    math.def(
+        "compute_layer_stats",
+        [](const std::vector<std::vector<double>>& matrix, const std::string& architecture) {
+            return stevejob::models::ArchitectureCatalog::make(
+                architecture, [&](const auto& model) { return model.compute_layer_stats(matrix); });
+        },
+        py::arg("matrix"),
+        py::arg("architecture") = "mlp_regressor",
+        "Compute layer statistics provided by the model definition.");
     math.def("apply_gradient_step",
              &stevejob::math::apply_gradient_step,
              py::arg("weights"),
@@ -105,6 +168,27 @@ PYBIND11_MODULE(tensor_engine, module) {
     module.def("validate_tiny_inputs", &stevejob::bridge::CheckpointBridge::validate_tiny_inputs, py::arg("inputs"), py::arg("max_rows"), py::arg("max_cols"));
     module.def("single_layer", &stevejob::bridge::CheckpointBridge::single_layer, py::arg("checkpoint"));
     module.def("pack_checkpoint", &stevejob::bridge::CheckpointBridge::pack_checkpoint, py::arg("layers"), py::arg("outputs"));
+    module.def("parse_dampening",
+               &stevejob::bridge::CheckpointBridge::parse_dampening,
+               py::arg("value"),
+               py::arg("architecture") = "");
+    module.def("parse_learning_rate",
+               &stevejob::bridge::CheckpointBridge::parse_learning_rate,
+               py::arg("value"),
+               py::arg("architecture") = "");
+    module.def("parse_weight_decay",
+               &stevejob::bridge::CheckpointBridge::parse_weight_decay,
+               py::arg("value"),
+               py::arg("architecture") = "");
+    module.def("parse_gradients",
+               &stevejob::bridge::CheckpointBridge::parse_gradients,
+               py::arg("value"),
+               py::arg("checkpoint") = py::none(),
+               py::arg("architecture") = "");
+    module.def("evaluate_checkpoint_inputs",
+               &stevejob::bridge::CheckpointBridge::evaluate_checkpoint_inputs,
+               py::arg("checkpoint"),
+               py::arg("inputs"));
     module.def("omit", &stevejob::bridge::ValueCodec::omit, py::arg("mapping"), py::arg("keys"));
     module.def("parse_connection_parts", &stevejob::bridge::SharedKeyText::parse_connection_parts, py::arg("raw"));
     module.def("canonical_ms_headers", &stevejob::bridge::SharedKeyText::canonical_ms_headers, py::arg("headers"));
@@ -312,6 +396,12 @@ PYBIND11_MODULE(tensor_engine, module) {
 
     py::class_<stevejob::models::MlpRegressor>(module, "MlpRegressor")
         .def(py::init<>())
+        .def_property(
+            "config",
+            [](const stevejob::models::MlpRegressor& m) { return m.config(); },
+            &stevejob::models::MlpRegressor::set_config)
+        .def("set_config", &stevejob::models::MlpRegressor::set_config, py::arg("config"))
+        .def("compute_layer_stats", &stevejob::models::MlpRegressor::compute_layer_stats, py::arg("matrix"))
         .def("seed_to_storage",
              [](stevejob::models::MlpRegressor& model,
                 const std::string& target_blob,
@@ -324,6 +414,12 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("journal_capacity") = 10);
     py::class_<stevejob::models::DemoScaleModel>(module, "DemoScaleModel")
         .def(py::init<>())
+        .def_property(
+            "config",
+            [](const stevejob::models::DemoScaleModel& m) { return m.config(); },
+            &stevejob::models::DemoScaleModel::set_config)
+        .def("set_config", &stevejob::models::DemoScaleModel::set_config, py::arg("config"))
+        .def("compute_layer_stats", &stevejob::models::DemoScaleModel::compute_layer_stats, py::arg("matrix"))
         .def("seed_to_storage",
              [](stevejob::models::DemoScaleModel& model,
                 const std::string& target_blob,
@@ -336,6 +432,12 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("journal_capacity") = 5);
     py::class_<stevejob::models::BottleneckAutoencoder>(module, "BottleneckAutoencoder")
         .def(py::init<>())
+        .def_property(
+            "config",
+            [](const stevejob::models::BottleneckAutoencoder& m) { return m.config(); },
+            &stevejob::models::BottleneckAutoencoder::set_config)
+        .def("set_config", &stevejob::models::BottleneckAutoencoder::set_config, py::arg("config"))
+        .def("compute_layer_stats", &stevejob::models::BottleneckAutoencoder::compute_layer_stats, py::arg("matrix"))
         .def("seed_to_storage",
              [](stevejob::models::BottleneckAutoencoder& model,
                 const std::string& target_blob,

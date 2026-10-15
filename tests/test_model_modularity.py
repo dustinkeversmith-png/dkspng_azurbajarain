@@ -73,6 +73,76 @@ class ModelModularityTest(unittest.TestCase):
         self.assertIn("demo_scale", journal_saved)
         self.assertNotIn("winner", journal_saved)
 
+    def test_canonical_mlp_and_ae_models_and_per_learning_config(self) -> None:
+        mlp = tensor_engine.MlpRegressor()
+        ae = tensor_engine.BottleneckAutoencoder()
+        demo = tensor_engine.DemoScaleModel()
+
+        self.assertEqual(mlp.config.max_candidates, 3)
+        self.assertEqual(mlp.config.max_input_cols, 4)
+        self.assertEqual(ae.config.max_input_cols, 8)
+        self.assertEqual(demo.config.max_candidates, 2)
+        self.assertEqual(demo.config.max_input_cols, 3)
+
+        custom_cfg = mlp.config
+        custom_cfg.max_learning_rate = 0.025
+        custom_cfg.int_bound = 15
+        mlp.set_config(custom_cfg)
+        self.assertAlmostEqual(mlp.config.max_learning_rate, 0.025)
+        self.assertEqual(mlp.config.int_bound, 15)
+
+        mlp_blob = f"mlp_{uuid.uuid4().hex[:8]}.json"
+        mlp_journal = f"mlp_{uuid.uuid4().hex[:8]}.json"
+        mlp_seeded = _plain(mlp.seed_to_storage(mlp_blob, mlp_journal, 5))
+        self.assertEqual(mlp_seeded["architecture"], "mlp_regressor")
+        self.assertEqual(mlp_seeded["origin"], "mlp_regressor")
+        mlp_prompt = tensor_engine.compile_prompt(mlp_blob, mlp_journal, "layer1@r0c0", 3, 25, "")
+        self.assertIn("Model: mlp_regressor", mlp_prompt)
+        self.assertIn("regression_output", mlp_prompt)
+        self.assertIn("bias_delta", mlp_prompt)
+
+        ae_blob = f"ae_{uuid.uuid4().hex[:8]}.json"
+        ae_journal = f"ae_{uuid.uuid4().hex[:8]}.json"
+        ae_seeded = _plain(ae.seed_to_storage(ae_blob, ae_journal, 5))
+        self.assertEqual(ae_seeded["architecture"], "bottleneck_ae")
+        self.assertEqual(ae_seeded["origin"], "bottleneck_ae")
+        ae_prompt = tensor_engine.compile_prompt(ae_blob, ae_journal, "encode", 3, 25, "")
+        self.assertIn("Model: bottleneck_ae", ae_prompt)
+        self.assertIn("reconstruction_output", ae_prompt)
+        self.assertIn("latent_utilization", ae_prompt)
+
+    def test_model_owned_parsing_and_layer_diagnostics(self) -> None:
+        ckpt = {
+            "architecture": "mlp_regressor",
+            "layer1": {
+                "weights": [[0.1, -0.2], [0.3, 0.4]],
+                "biases": [0.05, -0.05],
+            },
+        }
+        diag = _plain(tensor_engine.layer_diagnostics(ckpt))
+        self.assertIn("layer1", diag)
+        self.assertEqual(diag["layer1"]["regression_elements"], 4)
+
+        damp = tensor_engine.parse_dampening({"dampening_text": '{"dampening": 0.5}'}, "mlp_regressor")
+        self.assertAlmostEqual(damp, 0.5)
+
+        grads = _plain(
+            tensor_engine.parse_gradients(
+                {
+                    "gradients": {
+                        "layer1": {
+                            "weights": "r:1|g:0.1|A:2 -1|B:1 3",
+                            "biases": "q:0.01|D:5 -5",
+                        }
+                    }
+                },
+                ckpt,
+                "mlp_regressor",
+            )
+        )
+        self.assertEqual(len(grads["layer1"]["weights"]), 2)
+        self.assertEqual(len(grads["layer1"]["biases"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

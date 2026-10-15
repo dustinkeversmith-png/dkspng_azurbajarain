@@ -88,7 +88,7 @@ public:
     }
 
     std::string serialize_matrix(const std::vector<std::vector<double>>& matrix) const override {
-        return TotrEngine::encode_matrix(matrix, 1);
+        return display_token(TotrEngine::encode_matrix(matrix, 1));
     }
 
     std::vector<std::vector<double>> deserialize_matrix(const std::string& token, std::size_t rows, std::size_t cols) const override {
@@ -264,6 +264,37 @@ private:
     }
 
 private:
+    static std::string trim_number(double value, int precision) {
+        std::ostringstream out;
+        out.setf(std::ios::fixed);
+        out.precision(precision);
+        out << value;
+        std::string text = out.str();
+        const std::size_t dot = text.find('.');
+        if (dot != std::string::npos) {
+            while (!text.empty() && text.back() == '0') {
+                text.pop_back();
+            }
+            if (!text.empty() && text.back() == '.') {
+                text.pop_back();
+            }
+        }
+        if (text.empty() || text == "-" || text == "-0") {
+            return "0";
+        }
+        return text;
+    }
+
+    static std::string display_token(const std::string& token) {
+        const std::size_t start = token.find("g:");
+        const std::size_t end = token.find('|', start == std::string::npos ? 0 : start);
+        if (start == std::string::npos || end == std::string::npos) {
+            return token;
+        }
+        const double gamma = std::stod(token.substr(start + 2, end - (start + 2)));
+        return token.substr(0, start + 2) + trim_number(gamma, 4) + token.substr(end);
+    }
+
     static std::vector<double> window(const std::vector<double>& vec, std::size_t start, std::size_t count) {
         if (start + count > vec.size()) {
             throw std::invalid_argument("vector window is outside the source");

@@ -44,7 +44,7 @@ Bias Scheme: bias_float
   Model: Bias values are plain floats, one per output of the active slice.
 Output Scheme: scale_output. Format: One decimal, the linear head's scale prediction.. Equation: prediction = head(mix(input)).. Rules: The value is finite. The prompt does not list the target grid.
   Model: The scale target is half the sum of the three inputs. The head prediction uses scale_output.
-Active Slice: w:"r:1|g:0.0020409247521986098|A:-20 40 99|B:97 48" | b:"0.10 0.10"
+Active Slice: w:"r:1|g:0.002|A:-20 40 99|B:97 48" | b:"0.10 0.10"
 
 === CANDIDATE ROLES & CONSTRAINTS ===
 Bound: Ints must stay in [-25, 25]. Never write < -99 or > 99.

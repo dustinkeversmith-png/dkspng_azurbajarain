@@ -30,7 +30,7 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
     checkpoint_blob = incoming.get("checkpoint_blob", "target_model.json")
     journal_blob = incoming.get("journal_blob", "target_journal.json")
     journal_capacity = int(incoming.get("journal_capacity", 10))
-    rolling_config = incoming.get("rolling_config") or {"visible_history_count": 4}
+    rolling_config = incoming.get("rolling_config") or {}
     training_params = incoming.get("training_params") or {}
     meta = yield context.call_activity(
         "activity_gateway_read_meta",
@@ -66,8 +66,8 @@ def modular_model_orchestrator(context: df.DurableOrchestrationContext):
                     "checkpoint_blob": checkpoint_blob,
                     "journal_blob": journal_blob,
                     "layer_name": active_layer,
-                    "visible_history": int(rolling_config.get("visible_history_count", 3)),
-                    "int_bound": int(training_params.get("int_bound", 25)),
+                    "visible_history": int(rolling_config.get("visible_history_count", -1)),
+                    "int_bound": int(training_params.get("int_bound", -1)),
                     "retry_note": note,
                 },
             )
@@ -260,8 +260,8 @@ def activity_gateway_compile_prompt(payload: dict) -> dict[str, Any]:
         payload["checkpoint_blob"],
         payload["journal_blob"],
         payload["layer_name"],
-        int(payload.get("visible_history", 3)),
-        int(payload.get("int_bound", 25)),
+        int(payload.get("visible_history", -1)),
+        int(payload.get("int_bound", -1)),
         str(payload.get("retry_note") or ""),
     )
     return {"prompt": prompt}

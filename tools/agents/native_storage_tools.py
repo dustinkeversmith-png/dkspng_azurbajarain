@@ -2,28 +2,22 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
-
-from tools.core.host import argument_object
 
 
 def _payload(value: dict[str, Any] | str) -> dict[str, Any]:
-    return argument_object(value)
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        parsed = json.loads(value)
+        if isinstance(parsed, dict):
+            return parsed
+    raise TypeError("arguments must be a dictionary or JSON object string")
 
 
 class NativeStorageTools:
     """Read state and commit candidate updates. Bytes stay in C++."""
-
-    HOST_TOOLS = (
-        (
-            "read_totr_state_native",
-            "Read current checkpoint and journal. Pass checkpoint_blob and journal_blob.",
-        ),
-        (
-            "commit_winner_native",
-            "Score candidate in C++ and commit if loss decreases. Pass l1_w, l2_w, l1_b, l2_b, target_blob, journal_blob.",
-        ),
-    )
 
     def engine(self):
         from tools import tensor_engine

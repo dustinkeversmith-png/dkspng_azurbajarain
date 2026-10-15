@@ -42,11 +42,19 @@ public:
         board.previous_loss = journal.committed_loss();
         board.best_model = baseline;
         const stevejob::models::SliceRef active_slice = baseline.find_slice(slice_id);
-        const std::string active_token = baseline.slice_token(active_slice);
-        const std::string active_bias = baseline.slice_bias(active_slice);
-        const bool dead_probe = stevejob::models::ArchitectureCatalog::visit(
+        std::string active_token;
+        std::string active_bias;
+        bool dead_probe = false;
+        stevejob::models::ArchitectureCatalog::visit(
             stevejob::models::NeuralNetwork(baseline),
-            [&](auto& model) { return model.probe_is_flat(slice_id); });
+            [&](auto& model) {
+                active_token = model.serialize_slice(active_slice);
+                active_bias = model.serialize_bias(active_slice);
+                dead_probe = model.probe_is_flat(slice_id);
+                board.min_commit_drop = model.config().min_commit_drop;
+                board.divergence_threshold = model.config().divergence_threshold;
+                return 0;
+            });
         for (const TournamentCandidate& candidate : candidates) {
             board.consider(baseline, candidate, slice_id, active_token, active_bias, active_slice.cols, dead_probe);
         }
@@ -208,6 +216,8 @@ private:
     struct Board {
         double previous_loss = std::numeric_limits<double>::infinity();
         double best_loss = std::numeric_limits<double>::infinity();
+        double min_commit_drop = 1e-4;
+        double divergence_threshold = 100.0;
         std::string winner = "none";
         std::string winner_token;
         stevejob::models::NeuralNetwork best_model;
@@ -256,8 +266,8 @@ private:
                     return;
                 }
                 row["loss"] = judged.score.primary_loss;
-                row["status"] = judged.score.primary_loss > 100.0 ? "rejected_divergent" : "scored";
-                if (judged.score.primary_loss > 100.0) {
+                row["status"] = judged.score.primary_loss > divergence_threshold ? "rejected_divergent" : "scored";
+                if (judged.score.primary_loss > divergence_threshold) {
                     any_divergent = true;
                 } else if (judged.score.primary_loss < best_loss) {
                     best_loss = judged.score.primary_loss;
@@ -281,8 +291,7 @@ private:
                          const std::string& current,
                          const std::string& slice_id,
                          const std::string& active_token) const {
-            constexpr double kMinCommitDrop = 1e-4;
-            const bool kept = any_scored && (previous_loss - best_loss > kMinCommitDrop);
+            const bool kept = any_scored && (previous_loss - best_loss > min_commit_drop);
             std::string checksum = client.sha256_hex16(current);
             const std::string status = outcome(kept);
             if (kept) {

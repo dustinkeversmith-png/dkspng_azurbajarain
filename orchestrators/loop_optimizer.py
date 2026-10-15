@@ -38,8 +38,8 @@ def _slice_loop(context: df.DurableOrchestrationContext, incoming: dict[str, Any
     checkpoint_blob = incoming.get("checkpoint_blob", defaults["checkpoint_blob"])
     journal_blob = incoming.get("journal_blob", defaults["journal_blob"])
     journal_capacity = int(incoming.get("journal_capacity", defaults["journal_capacity"]))
-    visible_history = int((incoming.get("rolling_config") or {}).get("visible_history_count", 3))
-    int_bound = int((incoming.get("training_params") or {}).get("int_bound", 25))
+    visible_history = int((incoming.get("rolling_config") or {}).get("visible_history_count", -1))
+    int_bound = int((incoming.get("training_params") or {}).get("int_bound", -1))
     model_meta = yield context.call_activity(
         "activity_read_model_meta",
         {"checkpoint_blob": checkpoint_blob, "journal_blob": journal_blob},
@@ -180,8 +180,8 @@ def activity_compile_prompt(payload: dict) -> dict[str, Any]:
         payload["checkpoint_blob"],
         payload["journal_blob"],
         payload["layer_name"],
-        int(payload.get("visible_history", 3)),
-        int(payload.get("int_bound", 25)),
+        int(payload.get("visible_history", -1)),
+        int(payload.get("int_bound", -1)),
         str(payload.get("retry_note") or ""),
     )
     return {"prompt": prompt}

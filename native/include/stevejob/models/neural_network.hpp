@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stevejob/messaging/totr_engine.hpp"
 #include "stevejob/models/eval_scheme.hpp"
 #include "stevejob/models/layer_spec.hpp"
 #include "stevejob/models/slice_ref.hpp"
@@ -9,8 +8,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iomanip>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -108,15 +105,6 @@ public:
         layers[slice.layer_index].patch_block(slice, patch_w, patch_b);
     }
 
-    std::string slice_token(const SliceRef& slice) const {
-        const std::string token = stevejob::messaging::TotrEngine::encode_matrix(layers[slice.layer_index].extract_block(slice), 1);
-        return display_token(token);
-    }
-
-    std::string slice_bias(const SliceRef& slice) const {
-        return display_bias(layers[slice.layer_index].biases, slice.col_offset, slice.cols);
-    }
-
     std::string stored_layer_name(std::size_t index) const { return stored_name(layers.at(index), index == 0); }
 
     static NeuralNetwork from_stored_layers(const std::vector<std::string>& names,
@@ -145,47 +133,6 @@ private:
         const std::size_t long_side = std::max(rows, cols);
         const std::size_t short_side = std::min(rows, cols);
         return long_side <= slices.long_side && short_side <= slices.short_side;
-    }
-
-    static std::string trim_number(double value, int precision) {
-        std::ostringstream out;
-        out.setf(std::ios::fixed);
-        out << std::setprecision(precision) << value;
-        std::string text = out.str();
-        const std::size_t dot = text.find('.');
-        if (dot != std::string::npos) {
-            while (!text.empty() && text.back() == '0') {
-                text.pop_back();
-            }
-            if (!text.empty() && text.back() == '.') {
-                text.pop_back();
-            }
-        }
-        if (text.empty() || text == "-" || text == "-0") {
-            return "0";
-        }
-        return text;
-    }
-
-    static std::string display_token(const std::string& token) {
-        const std::size_t start = token.find("g:");
-        const std::size_t end = token.find('|', start == std::string::npos ? 0 : start);
-        if (start == std::string::npos || end == std::string::npos) {
-            return token;
-        }
-        const double gamma = std::stod(token.substr(start + 2, end - (start + 2)));
-        return token.substr(0, start + 2) + trim_number(gamma, 4) + token.substr(end);
-    }
-
-    static std::string display_bias(const std::vector<double>& values, std::size_t begin, std::size_t count) {
-        std::ostringstream out;
-        for (std::size_t index = 0; index < count; ++index) {
-            if (index > 0) {
-                out << ' ';
-            }
-            out << trim_number(values[begin + index], 2);
-        }
-        return out.str();
     }
 
     std::string stored_name(const LayerSpec& layer, bool first) const {
@@ -232,3 +179,4 @@ private:
 };
 
 }  // namespace stevejob::models
+

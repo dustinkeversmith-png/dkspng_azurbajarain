@@ -51,8 +51,10 @@ public:
         return render_checkpoint(model, model.checkpoint_document(score, checksum));
     }
 
-    static NeuralNetwork unpack(const std::string& bytes) {
-        return ArchitectureCatalog::prepare(stevejob::messaging::SJC1Compressor::instance().unpack(bytes));
+    static NeuralNetwork unpack(const std::string& bytes, const std::string& architecture = "") {
+        const NeuralNetwork raw = ArchitectureCatalog::make(
+            architecture, [&](const auto& model) { return model.container_scheme().unpack(bytes); });
+        return ArchitectureCatalog::prepare(raw);
     }
 
     static LoadedCheckpoint open(const std::string& target_blob) {
