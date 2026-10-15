@@ -448,6 +448,51 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("target_blob"),
              py::arg("journal_blob"),
              py::arg("journal_capacity") = 10);
+    py::class_<stevejob::models::ForwardAnalyzedModel>(module, "ForwardAnalyzedModel")
+        .def(py::init<>())
+        .def_property(
+            "config",
+            [](const stevejob::models::ForwardAnalyzedModel& m) { return m.config(); },
+            &stevejob::models::ForwardAnalyzedModel::set_config)
+        .def("set_config", &stevejob::models::ForwardAnalyzedModel::set_config, py::arg("config"))
+        .def("compute_layer_stats", &stevejob::models::ForwardAnalyzedModel::compute_layer_stats, py::arg("matrix"))
+        .def("analyze_network",
+             [](const stevejob::models::ForwardAnalyzedModel& model) {
+                 const auto snap = model.analyze_network(model.network());
+                 py::dict out;
+                 out["dead_units_l1"] = snap.dead_units_l1;
+                 out["dead_units_l2"] = snap.dead_units_l2;
+                 out["total_dead_units"] = snap.total_dead_units;
+                 out["numerical_rank_l1"] = snap.numerical_rank_l1;
+                 out["numerical_rank_l2"] = snap.numerical_rank_l2;
+                 out["mean_effective_rank"] = snap.mean_effective_rank;
+                 out["strongest_association"] = snap.strongest_association;
+                 out["sign_agreement_ratio"] = snap.sign_agreement_ratio;
+                 out["target_correlation"] = snap.target_correlation;
+                 out["range_ratio"] = snap.range_ratio;
+                 out["encoder_tokens"] = snap.encoder_tokens;
+                 out["eigen_signs_token"] = snap.eigen_signs_token;
+                 out["summary_token"] = snap.summary_token;
+                 out["pathway_activity"] = snap.concise_text.pathway_activity;
+                 out["feature_sensitivity"] = snap.concise_text.feature_sensitivity;
+                 out["representational_structure"] = snap.concise_text.representational_structure;
+                 out["functional_mapping"] = snap.concise_text.functional_mapping;
+                 out["batch_pathway_activity"] = snap.batch_text.pathway_activity;
+                 out["batch_feature_sensitivity"] = snap.batch_text.feature_sensitivity;
+                 out["batch_representational_structure"] = snap.batch_text.representational_structure;
+                 out["batch_functional_mapping"] = snap.batch_text.functional_mapping;
+                 return out;
+             })
+        .def("seed_to_storage",
+             [](stevejob::models::ForwardAnalyzedModel& model,
+                const std::string& target_blob,
+                const std::string& journal_blob,
+                std::size_t journal_capacity) {
+                 return stevejob::bridge::EngineGateway::seed_model(model, target_blob, journal_blob, journal_capacity);
+             },
+             py::arg("target_blob"),
+             py::arg("journal_blob"),
+             py::arg("journal_capacity") = 10);
     module.def("read_architecture_meta",
                &stevejob::bridge::EngineGateway::read_meta,
                py::arg("target_blob"),

@@ -31,6 +31,19 @@ if(NOT Eigen3_FOUND)
     endif()
 endif()
 
+find_package(nlohmann_json 3.2.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    include(FetchContent)
+    set(JSON_Install OFF CACHE INTERNAL "")
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    FetchContent_Declare(
+        nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
 set(NATIVE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(FORWARD_ANALYSIS_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/../offline_models/forward_analysis/include")
 set(NATIVE_ENGINE_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/../build/native")
@@ -42,7 +55,7 @@ function(add_native_module target source)
         "${FORWARD_ANALYSIS_INCLUDE}"
         ${EIGEN3_INCLUDE_DIRS}
     )
-    target_link_libraries(${target} PRIVATE Eigen3::Eigen)
+    target_link_libraries(${target} PRIVATE Eigen3::Eigen nlohmann_json::nlohmann_json)
     if(WIN32)
         target_compile_definitions(${target} PRIVATE NOMINMAX _hypot=hypot)
     endif()

@@ -143,6 +143,48 @@ class ModelModularityTest(unittest.TestCase):
         self.assertEqual(len(grads["layer1"]["weights"]), 2)
         self.assertEqual(len(grads["layer1"]["biases"]), 2)
 
+    def test_forward_analyzed_model_appends_analysis_to_prompt_checkpoint_and_journal(self) -> None:
+        blob = f"fa_{uuid.uuid4().hex[:8]}.json"
+        journal = f"fa_{uuid.uuid4().hex[:8]}.json"
+        model = tensor_engine.ForwardAnalyzedModel()
+        seeded = _plain(model.seed_to_storage(blob, journal, 6))
+
+        # 1. Verify checkpoint document contains forward_analysis results
+        self.assertEqual(seeded["architecture"], "forward_analyzed_mlp")
+        self.assertEqual(seeded["origin"], "forward_analyzed_mlp")
+        self.assertIn("fa_dead_units", seeded)
+        self.assertIn("fa_effective_rank", seeded)
+        self.assertIn("fa_target_correlation", seeded)
+        self.assertIn("fa_sign_agreement", seeded)
+        self.assertIn("fa_summary", seeded)
+        self.assertIn("fa_pathway_activity", seeded)
+        self.assertIn("fa_feature_sensitivity", seeded)
+        self.assertIn("fa_representational_structure", seeded)
+        self.assertIn("fa_functional_mapping", seeded)
+
+        # 2. Verify compiled prompt contains forward_analysis telemetry & journal history
+        prompt = tensor_engine.compile_prompt(blob, journal, "layer1@r0c0", 3, 25, "")
+        self.assertIn("Model: forward_analyzed_mlp", prompt)
+        self.assertIn("[fa_dead_units]:", prompt)
+        self.assertIn("[fa_effective_rank]:", prompt)
+        self.assertIn("[fa_target_correlation]:", prompt)
+        self.assertIn("[fa_pathway_activity]:", prompt)
+        self.assertIn("[fa_feature_sensitivity]:", prompt)
+        self.assertIn("[fa_representational_structure]:", prompt)
+        self.assertIn("[fa_functional_mapping]:", prompt)
+        self.assertIn("Encoding: forward_analysis_distiller", prompt)
+        self.assertIn("fa_summary=", prompt)
+
+        # 3. Verify journal JSON contains forward_analysis metrics and narrations
+        journal_text = tensor_engine.read_journal_text(journal)
+        self.assertIn('"task": "forward_analyzed_regression"', journal_text)
+        self.assertIn('"name": "fa_dead_units"', journal_text)
+        self.assertIn('"name": "fa_effective_rank"', journal_text)
+        self.assertIn('"name": "fa_target_corr"', journal_text)
+        self.assertIn('"name": "fa_summary"', journal_text)
+        self.assertIn('"name": "fa_pathway"', journal_text)
+        self.assertIn('"name": "fa_mapping"', journal_text)
+
 
 if __name__ == "__main__":
     unittest.main()
