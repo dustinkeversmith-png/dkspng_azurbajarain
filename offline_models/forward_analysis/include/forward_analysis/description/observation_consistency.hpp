@@ -1,6 +1,7 @@
 #pragma once
 
 #include "forward_analysis/analysis/network_observations.hpp"
+#include "forward_analysis/description/batch_statement_checker.hpp"
 #include "forward_analysis/description/number_words.hpp"
 #include "forward_analysis/description/observation_text.hpp"
 #include "forward_analysis/text/lexeme_splitter.hpp"
@@ -20,8 +21,8 @@ namespace forward_analysis {
 // Checks the verifiable claims in observation text against measured facts: named coordinates are
 // measured drivers, the gate or target-related coordinates, unit indices exist, counts attached to units / samples / outputs and
 // "<count> of the <total>" pairs are real sizes, statements about dead units, rays, sheets, deeper
-// layers, gating, preserved signs and close / flat outputs hold for the telemetry, and
-// the text does not loop.
+// layers, gating, preserved signs and close / flat outputs hold for the telemetry, batch-statistic statements
+// (BatchStatementChecker) match the measured counts, ranks, associations and ranges, and the text does not loop.
 struct ObservationConsistency {
     static std::array<bool, ObservationText::kFieldCount> verify(const ObservationText& text,
                                                                  const NetworkObservations& obs) {
@@ -42,8 +43,13 @@ struct ObservationConsistency {
         if (lex.empty()) {
             return "empty text";
         }
-        for (const std::string& reason : {indices_exist(lex, obs), coordinates_measured(lex, obs),
-                                          count_pairs_match(lex, obs), noun_counts_match(lex, obs),
+        std::vector<bool> verified;
+        const std::string batch = BatchStatementChecker::verify(lex, obs, verified);
+        if (!batch.empty()) {
+            return batch;
+        }
+        for (const std::string& reason : {indices_exist(lex, obs, verified), coordinates_measured(lex, obs),
+                                          count_pairs_match(lex, obs, verified), noun_counts_match(lex, obs, verified),
                                           claims_hold(lex, obs), repetition(lex)}) {
             if (!reason.empty()) {
                 return reason;
@@ -83,7 +89,9 @@ private:
                (i + 2 < lex.size() && lex[i + 1] != "of" && count_nouns().count(lex[i + 2]) > 0);
     }
 
-    static std::string indices_exist(const std::vector<std::string>& lex, const NetworkObservations& obs) {
+    static std::string indices_exist(const std::vector<std::string>& lex,
+                                     const NetworkObservations& obs,
+                                     const std::vector<bool>& verified) {
         std::size_t largest = std::max(obs.shape.num_samples, obs.shape.output_dim);
         for (std::size_t w : obs.shape.hidden_widths) {
             largest = std::max(largest, w);
@@ -93,7 +101,7 @@ private:
             if (is_coordinate(token) && std::stoul(token.substr(1)) >= obs.shape.input_dim) {
                 return token + " exceeds input width " + std::to_string(obs.shape.input_dim);
             }
-            if (all_digits(token) && !is_decimal_part(lex, i) && !before_count_noun(lex, i) &&
+            if (all_digits(token) && !verified[i] && !is_decimal_part(lex, i) && !before_count_noun(lex, i) &&
                 std::stoul(token) >= largest) {
                 return "index " + token + " exceeds every layer, output and sample count";
             }
@@ -118,7 +126,9 @@ private:
         return "";
     }
 
-    static std::string count_pairs_match(const std::vector<std::string>& lex, const NetworkObservations& obs) {
+    static std::string count_pairs_match(const std::vector<std::string>& lex,
+                                         const NetworkObservations& obs,
+                                         const std::vector<bool>& verified) {
         std::set<std::pair<std::size_t, std::size_t>> allowed;
         for (const LayerObservation& layer : obs.layers) {
             allowed.insert({layer.dead_units.size(), layer.width});
@@ -130,7 +140,7 @@ private:
         for (std::size_t i = 0; i + 3 < lex.size(); ++i) {
             std::size_t part = 0;
             std::size_t whole = 0;
-            if (lex[i + 1] != "of" || (lex[i + 2] != "the" && lex[i + 2] != "its") ||
+            if (verified[i] || verified[i + 3] || lex[i + 1] != "of" || (lex[i + 2] != "the" && lex[i + 2] != "its") ||
                 !NumberWords::parse(lex[i], part) || !NumberWords::parse(lex[i + 3], whole)) {
                 continue;
             }
@@ -144,7 +154,9 @@ private:
         return "";
     }
 
-    static std::string noun_counts_match(const std::vector<std::string>& lex, const NetworkObservations& obs) {
+    static std::string noun_counts_match(const std::vector<std::string>& lex,
+                                         const NetworkObservations& obs,
+                                         const std::vector<bool>& verified) {
         std::set<std::size_t> allowed = {1};
         for (const LayerObservation& layer : obs.layers) {
             allowed.insert({layer.width, layer.dead_units.size(), layer.live_count(), layer.always_active_units.size(),
@@ -163,7 +175,7 @@ private:
                         obs.shape.input_dim - std::min(named.size(), obs.shape.input_dim)});
         for (std::size_t i = 0; i + 1 < lex.size(); ++i) {
             std::size_t value = 0;
-            if (is_decimal_part(lex, i) || !NumberWords::parse(lex[i], value) || negated(lex, i)) {
+            if (verified[i] || is_decimal_part(lex, i) || !NumberWords::parse(lex[i], value) || negated(lex, i)) {
                 continue;
             }
             if (before_count_noun(lex, i) && allowed.count(value) == 0) {

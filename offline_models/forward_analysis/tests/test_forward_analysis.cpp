@@ -1,5 +1,6 @@
-#include "forward_analysis/forward_analysis.hpp"
+﻿#include "forward_analysis/forward_analysis.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <exception>
@@ -15,6 +16,9 @@
 
 #ifndef FORWARD_ANALYSIS_DATA_DIR
 #define FORWARD_ANALYSIS_DATA_DIR "data"
+#endif
+#ifndef FORWARD_ANALYSIS_FIXTURE_DIR
+#define FORWARD_ANALYSIS_FIXTURE_DIR "tests/fixtures"
 #endif
 
 using namespace forward_analysis;
@@ -52,6 +56,22 @@ struct ForwardAnalysisTestSuite {
 
     static std::string data_path(const std::string& name) {
         return std::string(FORWARD_ANALYSIS_DATA_DIR) + "/" + name;
+    }
+
+    static std::string fixture_path(const std::string& name) {
+        return std::string(FORWARD_ANALYSIS_FIXTURE_DIR) + "/" + name;
+    }
+
+    // The first `count` records of a JSONL file.
+    static std::vector<TrainingSample> load_head(const TrainingDatasetImporter& importer, const std::string& path, std::size_t count) {
+        std::ifstream in(path);
+        std::string line;
+        std::string head;
+        for (std::size_t n = 0; n < count && std::getline(in, line); ++n) {
+            head += line + "\n";
+        }
+        std::istringstream stream(head);
+        return importer.read_jsonl(stream, path);
     }
 
     const TrainingSample& sample(const std::string& id) const {
@@ -161,8 +181,8 @@ struct ForwardAnalysisTestSuite {
     void verify_importer() {
         std::cout << "dataset importer\n";
         const TrainingDatasetImporter importer(config);
-        train = importer.load_jsonl(data_path("llm_train.jsonl"));
-        eval = importer.load_jsonl(data_path("llm_eval.jsonl"));
+        train = importer.load_jsonl(fixture_path("llm_train.jsonl"));
+        eval = importer.load_jsonl(fixture_path("llm_eval.jsonl"));
         require(train.size() == 40 && eval.size() == 10, "40 train and 10 eval records");
         std::set<std::size_t> input_dims;
         std::set<std::size_t> layer_counts;
@@ -229,12 +249,109 @@ struct ForwardAnalysisTestSuite {
         require(found_x10, "train_010 x10 drives the hidden plane");
 
         for (const TrainingSample* s : all_samples()) {
-            require(s->ground_truth_targets.eigen_signs.isApprox(s->measured.eigen_signs),
-                    s->sample_id + " file eigen signs equal measured eigen signs");
+            require(s->measured.eigen_signs.size() == 4 && s->measured.eigen_signs.cwiseAbs().isApprox(Eigen::VectorXd::Ones(4)),
+                    s->sample_id + " four measured eigen signs of +/-1");
             const Eigen::VectorXd d = ObservationDescriptor::encode(s->measured);
             require(d.size() == static_cast<Eigen::Index>(ObservationDescriptor::dim()) && d.allFinite(),
                     s->sample_id + " descriptor finite");
         }
+    }
+
+    // Measurement, checker and narrator against the corrected dataset (manifest corrected-2026-10-14).
+    void verify_corrected_dataset() {
+        std::cout << "corrected dataset measurements\n";
+        Eigen::MatrixXd inputs(4, 4);
+        inputs << 1, 2, 0, 1,
+                  2, 1, 1, 0,
+                  3, 4, 0, 2,
+                  4, 3, 1, 1;
+        Eigen::MatrixXd centered = inputs.rowwise() - inputs.colwise().mean();
+        Eigen::MatrixXd covariance = centered.transpose() * centered / 3.0;
+        covariance.diagonal().setZero();
+        const Eigen::VectorXd eigenvalues = Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(covariance).eigenvalues().reverse();
+        const Eigen::VectorXd expected = eigenvalues.unaryExpr([](double v) { return v >= 0.0 ? 1.0 : -1.0; });
+        require(ObservationExtractor::eigen_signs(inputs, config).isApprox(expected),
+                "eigen signs are the descending eigenvalue signs of the zero-diagonal input covariance");
+        require(ObservationExtractor::eigen_signs(inputs.leftCols(2), config).tail(2).isApprox(Eigen::VectorXd::Ones(2)),
+                "eigen signs beyond the input width stay +1");
+
+        const TrainingDatasetImporter importer(config);
+        for (const char* file : {"llm_train.jsonl", "llm_validation.jsonl", "llm_eval_ood.jsonl"}) {
+            const std::string path = data_path(file);
+            if (!std::filesystem::exists(path)) {
+                std::cout << "  " << file << " not present, skipped\n";
+                continue;
+            }
+            const std::vector<TrainingSample> head = load_head(importer, path, 200);
+            std::size_t sign_match = 0;
+            std::size_t truth_pass = 0;
+            std::size_t narrated_exact = 0;
+            // Fields whose batch-statistic slot lexemes relexicalize to the ground-truth lexemes.
+            std::size_t slot_round_trips = 0;
+            for (const TrainingSample& s : head) {
+                sign_match += s.ground_truth_targets.eigen_signs.isApprox(s.measured.eigen_signs) ? 1 : 0;
+                const ObservationText narrated = BatchStatisticsNarrator::describe(s.measured, config);
+                for (std::size_t f = 0; f < ObservationText::kFieldCount; ++f) {
+                    const std::string& truth = s.ground_truth_targets.observations.field(f);
+                    truth_pass += ObservationConsistency::verify_field(truth, s.measured) ? 1 : 0;
+                    narrated_exact += narrated.field(f) == truth ? 1 : 0;
+                    // Ground-truth field with every batch-statistic number replaced by its slot.
+                    const std::vector<std::string> slots =
+                        FieldDelexicalizer::delexicalize(truth, s.measured, SlotBinding::kBatchStatistics);
+                    // Slots filled back from the measured telemetry.
+                    std::string refilled;
+                    slot_round_trips += ObservationDelexicalizer::relexicalize(slots, ShapeSlotLexicon::from(s.measured), refilled) &&
+                                                LexemeSplitter::split(refilled) == LexemeSplitter::split(truth)
+                                            ? 1
+                                            : 0;
+                    require(ObservationConsistency::verify_field(narrated.field(f), s.measured),
+                            s.sample_id + " batch narration " + ObservationText::field_names()[f] + " consistent");
+                }
+            }
+            std::cout << "  " << file << " first " << head.size() << ": eigen signs " << sign_match << ", ground-truth fields consistent "
+                      << truth_pass << "/" << head.size() * 4 << ", narration identical to ground truth " << narrated_exact
+                      << ", batch slots round-trip " << slot_round_trips << "\n";
+            require(slot_round_trips + 4 >= head.size() * 4, std::string(file) + " batch-statistic slots refill to the ground truth");
+            require(sign_match == head.size(), std::string(file) + " file eigen signs equal measured eigen signs");
+            require(truth_pass + 4 >= head.size() * 4, std::string(file) + " ground truth passes the consistency check");
+            require(narrated_exact + 4 >= head.size() * 4, std::string(file) + " batch narration reproduces the ground truth");
+        }
+
+        const TrainingSample& t4 = sample("syn_math_train_004");
+        const NetworkObservations& m = t4.measured;
+        const std::string truth = BatchStatisticsNarrator::describe(m, config).pathway_activity;
+        require(ObservationConsistency::verify_field(truth, m), "batch pathway narration consistent");
+        require(!ObservationConsistency::verify_field("Across 99 observations, the hidden widths are 3.", m),
+                "wrong observation count rejected");
+        require(!ObservationConsistency::verify_field(
+                    "Layer 1 has " + std::to_string(m.layers[0].dead_units.size() + 1) + " coordinates that remain zero throughout the batch.", m),
+                "wrong always-zero count rejected");
+        require(!ObservationConsistency::verify_field("Layer 7 has 0 coordinates that remain zero throughout the batch.", m),
+                "missing layer rejected");
+        require(!ObservationConsistency::verify_field(
+                    "Prediction and target signs agree in " + std::to_string(m.sign_agreements + 1) + " of " +
+                        std::to_string(m.sign_entries) + " entries.", m),
+                "wrong sign agreement rejected");
+        require(ObservationConsistency::verify_field(
+                    "Prediction and target signs agree in " + std::to_string(m.sign_agreements) + " of " +
+                        std::to_string(m.sign_entries) + " entries.", m),
+                "measured sign agreement accepted even when the counts exceed every layer width");
+        require(!ObservationConsistency::verify_field(m.narrow_representation ? "The observed activation variation occupies multiple directions."
+                                                                              : "This is a narrow observed representation.", m),
+                "narrow / multiple-direction claim checked against numerical ranks");
+
+        // Second-layer width slot, unfillable for a one-layer network.
+        const std::vector<std::string> second_width =
+            BatchStatementDelexicalizer::delexicalize("Across 5 observations, the hidden widths are 8 and 4.");
+        require(second_width.size() > 2 && second_width[second_width.size() - 2] == "<COUNT:W_2|d>",
+                "hidden-width list delexicalized positionally");
+        // One-layer copy of the sample-004 observations.
+        NetworkObservations one_layer = m;
+        one_layer.layers.resize(1);
+        // Text relexicalized for the one-layer observations.
+        std::string unfilled;
+        require(!ObservationDelexicalizer::relexicalize(second_width, ShapeSlotLexicon::from(one_layer), unfilled),
+                "second-layer slot not fillable for a one-layer network");
     }
 
     void verify_encoder() {
@@ -261,6 +378,295 @@ struct ForwardAnalysisTestSuite {
         const Eigen::MatrixXd original = perceiver.encode(formatter.format_sequence(s.telemetry));
         const Eigen::MatrixXd swapped = perceiver.encode(formatter.format_sequence(scaled));
         require((original - swapped).cwiseAbs().maxCoeff() < 0.5, "swapping two input columns changes Z only through index features");
+    }
+
+    void verify_domain_feature_extractors() {
+        std::cout << "domain feature extractors and feature significance\n";
+        // Registry initialized with the six default mathematical domain extractors.
+        FeatureExtractorRegistry registry;
+        require(registry.size() == AnalysisDomainTraits::kDomainCount, "all 6 analysis domains registered by default");
+        // Verify descriptors on an existing training sample.
+        const TrainingSample& t4 = sample("syn_math_train_004");
+        for (AnalysisDomain domain : AnalysisDomainTraits::all()) {
+            require(!registry.extract_domain(domain, t4.telemetry, config).empty(),
+                    std::string("extractor present for ") + AnalysisDomainTraits::name(domain));
+        }
+
+        // Extracted feature descriptors across all domains.
+        const std::vector<FeatureDescriptor> t4_features = registry.extract_all(t4.telemetry, config);
+        require(t4_features.size() >= 10 && registry.flatten_values(t4.telemetry, config).size() >= 50,
+                "default registry extracts multi-domain feature descriptors");
+        require(registry.flatten_values(t4.telemetry, config).allFinite(), "flattened feature values finite");
+
+        // Verify differentiable normalization derivative against finite differences.
+        for (FeatureNormalizationStrategy strat :
+             {FeatureNormalizationStrategy::Identity,
+              FeatureNormalizationStrategy::UnitInterval,
+              FeatureNormalizationStrategy::SignedUnitInterval,
+              FeatureNormalizationStrategy::TanhSquash,
+              FeatureNormalizationStrategy::LogScale,
+              FeatureNormalizationStrategy::StandardScore}) {
+            // Probe scalar value.
+            const double x = 0.42;
+            // Finite difference step.
+            const double eps = 1e-6;
+            // Numeric derivative.
+            const double num_d =
+                (FeatureDescriptor::normalize_value(x + eps, strat) -
+                 FeatureDescriptor::normalize_value(x - eps, strat)) /
+                (2.0 * eps);
+            // Analytic derivative.
+            const double ana_d = FeatureDescriptor::normalize_derivative(x, strat);
+            require(std::abs(num_d - ana_d) < 1e-5, "FeatureDescriptor::normalize_derivative matches finite difference");
+        }
+
+        // Verify extensibility: register a custom extractor without modifying PerceiverIOEncoder.
+        registry.register_extractor(std::make_shared<CustomProbeExtractor>());
+        require(registry.size() == AnalysisDomainTraits::kDomainCount + 1, "custom extractor registered dynamically");
+
+        // --- Feature Significance Distinction Checks (Section 4) ---
+        // 1. Narrow vs multidirectional representations:
+        // Base input matrix (8 samples x 4 coordinates).
+        Eigen::MatrixXd inputs_base(8, 4);
+        inputs_base << -1.5, 0.5, -0.5, 1.0,
+                       -1.0, -0.5, 0.8, -0.8,
+                       -0.5, 1.2, -1.1, 0.3,
+                        0.0, -1.0, 0.4, -0.4,
+                        0.5, 0.8, -0.9, 0.9,
+                        1.0, -0.7, 1.2, -1.1,
+                        1.2, 0.3, -0.3, 0.2,
+                       -1.2, -0.6, 0.4, -0.1;
+        // Rank-1 (narrow) hidden activations.
+        Eigen::MatrixXd h_narrow = inputs_base.col(0) * Eigen::RowVector4d(1.0, 2.0, 0.5, 1.5);
+        // Full-rank (multidirectional) hidden activations.
+        Eigen::MatrixXd h_multi = inputs_base.cwiseMax(0.0);
+        // Narrow telemetry tensor.
+        ForwardTelemetryTensor tel_narrow =
+            TelemetryBuilder::build(inputs_base, inputs_base.col(0), inputs_base.col(0), {h_narrow});
+        // Multidirectional telemetry tensor.
+        ForwardTelemetryTensor tel_multi =
+            TelemetryBuilder::build(inputs_base, inputs_base.col(0), inputs_base.col(0), {h_multi});
+        // Geometric domain extractor instance.
+        GeometricFeatureExtractor geom_ext;
+        // Extracted geometric features for narrow telemetry.
+        const std::vector<FeatureDescriptor> f_narrow = geom_ext.extract(tel_narrow, config);
+        // Extracted geometric features for multidirectional telemetry.
+        const std::vector<FeatureDescriptor> f_multi = geom_ext.extract(tel_multi, config);
+        require(f_narrow[0].values[0] == 1.0 && f_multi[0].values[0] == 0.0,
+                "significance 1: narrow vs multidirectional representation distinguished");
+
+        // 2. Positive vs negative spectral modes (+++- vs +--- on 4x4 zero-diagonal input covariance):
+        // Orthogonal zero-mean 8x4 basis matrix.
+        Eigen::MatrixXd u_ortho(8, 4);
+        u_ortho <<  1,  1,  1,  1,
+                    1,  1, -1, -1,
+                    1, -1,  1, -1,
+                    1, -1, -1,  1,
+                   -1,  1,  1, -1,
+                   -1,  1, -1,  1,
+                   -1, -1,  1,  1,
+                   -1, -1, -1, -1;
+        // Mixing matrix producing all-positive off-diagonal covariance (+---).
+        Eigen::Matrix4d m_pos = Eigen::Matrix4d::Constant(0.45);
+        m_pos.diagonal().setConstant(0.85);
+        // Mixing matrix producing all-negative off-diagonal covariance (+++-).
+        Eigen::Matrix4d m_neg = Eigen::Matrix4d::Constant(-0.25);
+        m_neg.diagonal().setConstant(0.95);
+        // Telemetry with +--- spectral mode.
+        ForwardTelemetryTensor tel_spec_pos =
+            TelemetryBuilder::build(u_ortho * m_pos, inputs_base.col(0), inputs_base.col(0), {h_multi});
+        // Telemetry with +++- spectral mode.
+        ForwardTelemetryTensor tel_spec_neg =
+            TelemetryBuilder::build(u_ortho * m_neg, inputs_base.col(0), inputs_base.col(0), {h_multi});
+        // Spectral domain extractor instance.
+        SpectralFeatureExtractor spec_ext;
+        // Spectral descriptors for +--- mode.
+        const std::vector<FeatureDescriptor> s_pos = spec_ext.extract(tel_spec_pos, config);
+        // Spectral descriptors for +++- mode.
+        const std::vector<FeatureDescriptor> s_neg = spec_ext.extract(tel_spec_neg, config);
+        require(s_pos[1].values[1] < 0.0 && s_neg[1].values[1] > 0.0 &&
+                    s_pos[1].values[2] < 0.0 && s_neg[1].values[2] > 0.0,
+                "significance 2: positive vs negative spectral modes (+--- vs +++-) distinguished");
+
+        // 3. One-layer vs multilayer architectures:
+        // Two-layer telemetry tensor.
+        ForwardTelemetryTensor tel_2layer =
+            TelemetryBuilder::build(inputs_base, inputs_base.col(0), inputs_base.col(0), {h_multi, h_narrow});
+        // Structural domain extractor instance.
+        StructuralTopologyFeatureExtractor struct_ext;
+        // Structural descriptors for 1-layer network.
+        const std::vector<FeatureDescriptor> st_1 = struct_ext.extract(tel_multi, config);
+        // Structural descriptors for 2-layer network.
+        const std::vector<FeatureDescriptor> st_2 = struct_ext.extract(tel_2layer, config);
+        require(st_1[0].values[0] == 1.0 && st_2[0].values[1] == 1.0 && !st_1[1].valid && st_2[1].valid,
+                "significance 3: 1-layer vs 2-layer architecture and missing-layer validity distinguished");
+
+        // 4. Similar moments but different sample orderings:
+        // Input matrix with monotonically sorted first column.
+        Eigen::MatrixXd in_sorted = inputs_base;
+        in_sorted.col(0) << -3.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 3.0;
+        // Input matrix with alternating first column of identical mean and variance.
+        Eigen::MatrixXd in_alternating = inputs_base;
+        in_alternating.col(0) << -3.0, 3.0, -2.0, 2.0, -1.0, 1.0, -0.5, 0.5;
+        // Telemetry for sorted sample ordering.
+        ForwardTelemetryTensor tel_sorted =
+            TelemetryBuilder::build(in_sorted, in_sorted.col(0), in_sorted.col(0), {h_multi});
+        // Telemetry for alternating sample ordering.
+        ForwardTelemetryTensor tel_alt =
+            TelemetryBuilder::build(in_alternating, in_alternating.col(0), in_alternating.col(0), {h_multi});
+        // Statistical domain extractor instance.
+        StatisticalFeatureExtractor stat_ext;
+        // Statistical descriptors for sorted ordering.
+        const std::vector<FeatureDescriptor> stat_sorted = stat_ext.extract(tel_sorted, config);
+        // Statistical descriptors for alternating ordering.
+        const std::vector<FeatureDescriptor> stat_alt = stat_ext.extract(tel_alt, config);
+        require(std::abs(stat_sorted[0].values[0] - stat_alt[0].values[0]) < 1e-12 &&
+                    std::abs(stat_sorted[0].values[1] - stat_alt[0].values[1]) < 1e-12 &&
+                    std::abs(stat_sorted[1].values[0] - stat_alt[1].values[0]) > 0.3,
+                "significance 4: identical marginal moments with different sample orderings distinguished");
+
+        // 5. Different correlation structures with identical marginal statistics:
+        // Positively correlated first two input columns.
+        Eigen::MatrixXd in_corr = in_sorted;
+        in_corr.col(1) = in_sorted.col(0);
+        // Negatively correlated first two input columns with identical marginal distribution.
+        Eigen::MatrixXd in_anticorr = in_sorted;
+        in_anticorr.col(1) = -in_sorted.col(0);
+        // Telemetry for positively correlated inputs.
+        ForwardTelemetryTensor tel_corr =
+            TelemetryBuilder::build(in_corr, in_corr.col(0), in_corr.col(0), {h_multi});
+        // Telemetry for negatively correlated inputs.
+        ForwardTelemetryTensor tel_anticorr =
+            TelemetryBuilder::build(in_anticorr, in_anticorr.col(0), in_anticorr.col(0), {h_multi});
+        // Statistical descriptors for correlated inputs.
+        const std::vector<FeatureDescriptor> stat_corr = stat_ext.extract(tel_corr, config);
+        // Statistical descriptors for anticorrelated inputs.
+        const std::vector<FeatureDescriptor> stat_anticorr = stat_ext.extract(tel_anticorr, config);
+        require(std::abs(stat_corr[2].values[1] - stat_anticorr[2].values[1]) > 0.25,
+                "significance 5: different correlation structures with identical marginals distinguished");
+
+        // 6. Different output error structures:
+        // Telemetry with aligned predictions and targets.
+        ForwardTelemetryTensor tel_aligned =
+            TelemetryBuilder::build(in_sorted, in_sorted.col(0), in_sorted.col(0), {h_multi});
+        // Telemetry with sign-inverted predictions relative to targets.
+        ForwardTelemetryTensor tel_flipped =
+            TelemetryBuilder::build(in_sorted, -in_sorted.col(0), in_sorted.col(0), {h_multi});
+        // Functional domain extractor instance.
+        FunctionalMappingFeatureExtractor func_ext;
+        // Functional descriptors for aligned predictions.
+        const std::vector<FeatureDescriptor> fn_aligned = func_ext.extract(tel_aligned, config);
+        // Functional descriptors for sign-inverted predictions.
+        const std::vector<FeatureDescriptor> fn_flipped = func_ext.extract(tel_flipped, config);
+        require(fn_aligned[0].values[3] > 0.9 && fn_flipped[0].values[3] < 0.1 &&
+                    fn_aligned[0].values[6] > 0.9 && fn_flipped[0].values[6] < -0.9,
+                "significance 6: aligned vs sign-flipped output error structures distinguished");
+    }
+
+    void verify_multi_family_tokens() {
+        std::cout << "multi-family token representations (5 ablation levels)\n";
+        // One-layer reference sample.
+        const TrainingSample& t4 = sample("syn_math_train_004");
+        // Two-layer reference sample.
+        const TrainingSample& t1 = sample("syn_math_train_001");
+        // Token count from the previous ablation level.
+        std::size_t prev_tokens = 0;
+        for (FeatureAblationLevel level :
+             {FeatureAblationLevel::kBaseline25,
+              FeatureAblationLevel::kExpandedChannel,
+              FeatureAblationLevel::kChannelPlusSample,
+              FeatureAblationLevel::kChannelPlusRelationship,
+              FeatureAblationLevel::kCompleteArchitecture}) {
+            // Config with the current ablation level.
+            DistillerConfig cfg = config;
+            cfg.feature_ablation_level = level;
+            // Formatter for the current ablation level.
+            ChannelSequenceFormatter formatter(cfg);
+            // Perceiver encoder for the current ablation level.
+            PerceiverIOEncoder perceiver(cfg);
+            // Multi-family token batch for 1-layer sample.
+            const MultiFamilyTokenBatch b1 = formatter.extract_token_batch(t4.telemetry);
+            // Multi-family token batch for 2-layer sample.
+            const MultiFamilyTokenBatch b2 = formatter.extract_token_batch(t1.telemetry);
+            require(b1.total_tokens() >= prev_tokens, "token count grows or stays equal with higher ablation level");
+            prev_tokens = b1.total_tokens();
+            // Projected token sequence (T x d_model).
+            const Eigen::MatrixXd seq1 = formatter.format_sequence(b1);
+            // Encoded Perceiver latent matrix (M x d_model).
+            const Eigen::MatrixXd z1 = perceiver.encode(seq1);
+            require(seq1.rows() == static_cast<Eigen::Index>(b1.total_tokens()) &&
+                        seq1.cols() == static_cast<Eigen::Index>(cfg.d_model) && z1.allFinite(),
+                    "formatted multi-family sequence and Perceiver latents valid");
+            if (level == FeatureAblationLevel::kCompleteArchitecture) {
+                require(b1.layer_valid_mask.size() == 2 && b1.layer_valid_mask[0] == 1.0 && b1.layer_valid_mask[1] == 0.0,
+                        "1-layer network masks out Layer 2 token");
+                require(b2.layer_valid_mask.size() == 2 && b2.layer_valid_mask[0] == 1.0 && b2.layer_valid_mask[1] == 1.0,
+                        "2-layer network keeps both Layer 1 and Layer 2 tokens active");
+            }
+        }
+    }
+
+    void verify_domain_prediction_heads() {
+        std::cout << "typed domain prediction heads and eigen-sign learning\n";
+        // Default domain prediction head registry.
+        NumericalPredictionHeadRegistry head_reg(config, 1234ULL);
+        require(head_reg.size() == 8, "8 domain-specific prediction heads registered");
+
+        // Verify missing-label masking on 1-layer vs 2-layer samples.
+        // One-layer training sample.
+        const TrainingSample& one_layer_sample = sample("syn_math_train_004");
+        // Two-layer training sample.
+        const TrainingSample& two_layer_sample = sample("syn_math_train_001");
+        // Targets for 1-layer sample.
+        const NumericalTargets targets_1 = NumericalTargets::from_observations(
+            one_layer_sample.measured,
+            one_layer_sample.ground_truth_targets.eigen_signs,
+            config);
+        // Targets for 2-layer sample.
+        const NumericalTargets targets_2 = NumericalTargets::from_observations(
+            two_layer_sample.measured,
+            two_layer_sample.ground_truth_targets.eigen_signs,
+            config);
+        require(targets_1.masks.at("activation_sparsity")(3) == 0.0 &&
+                    targets_1.masks.at("numerical_rank")(2) == 0.0 &&
+                    targets_1.masks.at("narrow_representation")(2) == 0.0 &&
+                    targets_1.masks.at("layer_structure")(2) == 0.0,
+                "1-layer sample masks Layer 2 targets in sparsity, rank, narrow, and layer_structure heads");
+        require(targets_2.masks.at("activation_sparsity")(3) == 1.0 &&
+                    targets_2.masks.at("numerical_rank")(2) == 1.0 &&
+                    targets_2.masks.at("narrow_representation")(2) == 1.0 &&
+                    targets_2.masks.at("layer_structure")(2) == 1.0,
+                "2-layer sample unmasks Layer 2 targets");
+
+        // Verify EigenSignHead learns non-majority spectral sign patterns (+++- and +---) as well as ++--.
+        // Redesigned EigenSignHead instance.
+        EigenSignHead eigen_head(config.d_model, config.eigen_sign_dim, 777ULL);
+        // RNG for synthetic latent representations.
+        DeterministicRng rng(777ULL);
+        // Pooled latent representation for +++- pattern.
+        const Eigen::VectorXd z_pppm = random_matrix(rng, static_cast<Eigen::Index>(config.d_model), 1).col(0);
+        // Pooled latent representation for +--- pattern.
+        const Eigen::VectorXd z_pmmm = random_matrix(rng, static_cast<Eigen::Index>(config.d_model), 1).col(0);
+        // Pooled latent representation for ++-- pattern.
+        const Eigen::VectorXd z_ppmm = random_matrix(rng, static_cast<Eigen::Index>(config.d_model), 1).col(0);
+        // Target signs +++-.
+        Eigen::Vector4d y_pppm(1.0, 1.0, 1.0, -1.0);
+        // Target signs +---.
+        Eigen::Vector4d y_pmmm(1.0, -1.0, -1.0, -1.0);
+        // Target signs ++--.
+        Eigen::Vector4d y_ppmm(1.0, 1.0, -1.0, -1.0);
+        // Optimization step counter.
+        for (int step = 0; step < 60; ++step) {
+            // Gradient accumulator wrt pooled_z.
+            Eigen::VectorXd dz = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(config.d_model));
+            eigen_head.compute_loss_and_step(z_pppm, y_pppm, 0.05, 1.0, dz);
+            eigen_head.compute_loss_and_step(z_pmmm, y_pmmm, 0.05, 1.0, dz);
+            eigen_head.compute_loss_and_step(z_ppmm, y_ppmm, 0.05, 1.0, dz);
+        }
+        require((eigen_head.predict_signs(z_pppm) - y_pppm).norm() == 0.0 &&
+                    (eigen_head.predict_signs(z_pmmm) - y_pmmm).norm() == 0.0 &&
+                    (eigen_head.predict_signs(z_ppmm) - y_ppmm).norm() == 0.0,
+                "redesigned EigenSignHead accurately classifies +++-, +---, and ++-- without majority collapse");
     }
 
     void verify_description() {
@@ -501,6 +907,140 @@ struct ForwardAnalysisTestSuite {
                 "decoupled weight decay shrinks the vocabulary projection");
     }
 
+    static Eigen::MatrixXd random_matrix(DeterministicRng& rng, Eigen::Index rows, Eigen::Index cols) {
+        Eigen::MatrixXd m(rows, cols);
+        for (Eigen::Index r = 0; r < rows; ++r) {
+            for (Eigen::Index c = 0; c < cols; ++c) {
+                m(r, c) = rng.normal(0.0, 1.0);
+            }
+        }
+        return m;
+    }
+
+    static Eigen::VectorXd random_descriptor(DeterministicRng& rng) {
+        Eigen::VectorXd d(static_cast<Eigen::Index>(ObservationDescriptor::dim()));
+        for (Eigen::Index i = 0; i < d.size(); ++i) {
+            d(i) = rng.uniform();
+        }
+        return d;
+    }
+
+    void verify_device_decoder() {
+        std::cout << "decoder on the OpenCL device (CLBlast GEMM + OpenCL C kernels)\n";
+        DistillerConfig small;
+        small.d_model = 32;
+        small.decoder_hidden_dim = 24;
+        small.num_latents = 4;
+        small.max_field_tokens = 40;
+        DistillerConfig small_cpu = small;
+        small_cpu.use_gpu = false;
+        AutoregressiveCausalDecoder gpu(small, 11);
+        AutoregressiveCausalDecoder cpu(small_cpu, 11);
+        const std::string accelerator = gpu.accelerator();
+        std::cout << "  accelerator: " << accelerator << "\n";
+        require(cpu.accelerator() == "cpu", "use_gpu = false keeps the decoder on the CPU");
+        if (accelerator == "cpu") {
+            std::cout << "  no OpenCL GPU with double precision; device checks skipped\n";
+            return;
+        }
+
+        const std::vector<std::vector<std::string>> sentences = {
+            LexemeSplitter::split("<COUNT:DEAD_L1|W> of the <DIM:W_1|w> first-layer units never fire on any sample ."),
+            LexemeSplitter::split("The output tracks x3 closely , with a correlation of 0.97 across samples ."),
+            LexemeSplitter::split("Hidden activity spans two directions ; the leading one carries most of the variance ."),
+        };
+        const std::vector<std::string> unseen = LexemeSplitter::split("A gate closes whenever x5 drops below zero .");
+        gpu.prepare_vocabulary(sentences);
+        cpu.prepare_vocabulary(sentences);
+        gpu.set_frozen(false);
+        cpu.set_frozen(false);
+        DeterministicRng rng(404);
+        double worst_loss = 0.0;
+        double worst_dz = 0.0;
+        for (std::size_t step = 0; step < 9; ++step) {
+            const Eigen::MatrixXd z = random_matrix(rng, 4, 32);
+            const Eigen::VectorXd d_hat = random_descriptor(rng);
+            const std::vector<std::string>& lexemes = step == 6 ? unseen : sentences[step % sentences.size()];
+            Eigen::MatrixXd dz_gpu = Eigen::MatrixXd::Zero(4, 32);
+            Eigen::MatrixXd dz_cpu = Eigen::MatrixXd::Zero(4, 32);
+            const double loss_gpu = gpu.compute_loss_and_step(z, d_hat, step % 4, lexemes, dz_gpu);
+            const double loss_cpu = cpu.compute_loss_and_step(z, d_hat, step % 4, lexemes, dz_cpu);
+            worst_loss = std::max(worst_loss, std::abs(loss_gpu - loss_cpu));
+            worst_dz = std::max(worst_dz, (dz_gpu - dz_cpu).cwiseAbs().maxCoeff());
+        }
+        std::cout << "  9 training steps with dropout 0.15 and decay 0.1 (step 7 adds new tokens): max |loss gpu - cpu| "
+                  << worst_loss << ", max |dZ gpu - cpu| " << worst_dz << "\n";
+        require(worst_loss < 1e-9, "device training-step losses match the CPU");
+        require(worst_dz < 1e-9, "device dLoss/dZ matches the CPU");
+        require(gpu.tokenizer().vocab_size() == cpu.tokenizer().vocab_size(), "vocabulary grows identically");
+
+        const Eigen::MatrixXd z = random_matrix(rng, 4, 32);
+        const Eigen::VectorXd d_hat = random_descriptor(rng);
+        const double eval_gpu = gpu.compute_loss(z, d_hat, 1, sentences[1]);
+        const double eval_cpu = cpu.compute_loss(z, d_hat, 1, sentences[1]);
+        std::cout << "  eval-mode loss gpu " << eval_gpu << ", cpu " << eval_cpu << "\n";
+        require(std::abs(eval_gpu - eval_cpu) < 1e-9, "device eval-mode loss matches the CPU");
+
+        AutoregressiveCausalDecoder after_step(small, 11);
+        after_step.prepare_vocabulary(sentences);
+        after_step.set_frozen(false);
+        Eigen::MatrixXd sink = Eigen::MatrixXd::Zero(4, 32);
+        after_step.compute_loss_and_step(z, d_hat, 0, sentences[0], sink);
+        require_throws([&]() { AutoregressiveCausalDecoder copy(after_step); },
+                       "copying while the device holds newer parameters is rejected");
+
+        const double weight_gap = (gpu.output_weights() - cpu.output_weights()).cwiseAbs().maxCoeff();
+        const Eigen::MatrixXd attention_gap =
+            gpu.attention_weights(z, d_hat, 2, sentences[2]) - cpu.attention_weights(z, d_hat, 2, sentences[2]);
+        const std::vector<int> generated_gpu = gpu.generate_field_tokens(z, d_hat, 0, 40);
+        const std::vector<int> generated_cpu = cpu.generate_field_tokens(z, d_hat, 0, 40);
+        std::cout << "  after synchronizing: max |W_out gpu - cpu| " << weight_gap << ", max |attention gpu - cpu| "
+                  << attention_gap.cwiseAbs().maxCoeff() << ", generated " << generated_gpu.size() << " / "
+                  << generated_cpu.size() << " tokens\n";
+        require(weight_gap < 1e-9, "synchronized device parameters match the CPU");
+        require(attention_gap.cwiseAbs().maxCoeff() < 1e-9 && generated_gpu == generated_cpu,
+                "generation from synchronized parameters matches the CPU");
+        AutoregressiveCausalDecoder copy(gpu);
+        require(std::abs(copy.compute_loss(z, d_hat, 1, sentences[1]) - eval_cpu) < 1e-9,
+                "a copy made after synchronizing carries the trained parameters");
+
+        DistillerConfig full;
+        DistillerConfig full_cpu = full;
+        full_cpu.use_gpu = false;
+        AutoregressiveCausalDecoder full_gpu(full, 3);
+        AutoregressiveCausalDecoder full_host(full_cpu, 3);
+        std::vector<std::vector<std::string>> fields;
+        for (std::size_t s = 0; s < 8; ++s) {
+            std::vector<std::string> lexemes;
+            for (std::size_t i = 0; i < 60; ++i) {
+                lexemes.push_back("w" + std::to_string((s * 211 + i * 29) % 1700));
+            }
+            fields.push_back(lexemes);
+        }
+        full_gpu.prepare_vocabulary(fields);
+        full_host.prepare_vocabulary(fields);
+        full_gpu.set_frozen(false);
+        full_host.set_frozen(false);
+        const Eigen::MatrixXd z_full = random_matrix(rng, 8, 256);
+        const Eigen::VectorXd d_full = random_descriptor(rng);
+        Eigen::MatrixXd dz_full = Eigen::MatrixXd::Zero(8, 256);
+        const auto time_steps = [&](AutoregressiveCausalDecoder& decoder) {
+            decoder.compute_loss_and_step(z_full, d_full, 0, fields[0], dz_full);
+            const auto started = std::chrono::steady_clock::now();
+            for (std::size_t step = 1; step <= 16; ++step) {
+                decoder.compute_loss_and_step(z_full, d_full, step % 4, fields[step % fields.size()], dz_full);
+            }
+            decoder.synchronize_host();
+            return std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() / 16.0;
+        };
+        const double cpu_seconds = time_steps(full_host);
+        const double gpu_seconds = time_steps(full_gpu);
+        std::cout << "  d_model 256, hidden 256, 8 latents, vocab " << full_gpu.tokenizer().vocab_size()
+                  << ", 61-token fields: training step cpu " << cpu_seconds * 1000.0 << " ms, gpu " << gpu_seconds * 1000.0
+                  << " ms (" << cpu_seconds / gpu_seconds << "x)\n";
+        require(gpu_seconds < cpu_seconds, "device training step is faster than the CPU at full size");
+    }
+
     void verify_training() {
         std::cout << "training\n";
         const std::vector<TrainingSample> subset(train.begin(), train.begin() + std::min<std::size_t>(12, train.size()));
@@ -616,6 +1156,7 @@ struct ForwardAnalysisTestSuite {
 };
 
 int main() {
+    std::cout << std::unitbuf;
     ForwardAnalysisTestSuite suite;
     try {
         suite.verify_math();
@@ -623,10 +1164,15 @@ int main() {
         suite.verify_builder();
         suite.verify_importer();
         suite.verify_extractor();
+        suite.verify_corrected_dataset();
         suite.verify_encoder();
+        suite.verify_domain_feature_extractors();
+        suite.verify_multi_family_tokens();
+        suite.verify_domain_prediction_heads();
         suite.verify_description();
         suite.verify_slots();
         suite.verify_decoder();
+        suite.verify_device_decoder();
         suite.verify_training();
     } catch (const std::exception& e) {
         std::cout << "unexpected exception: " << e.what() << "\n";

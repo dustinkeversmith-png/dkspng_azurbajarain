@@ -1,9 +1,13 @@
-# Synthetic neural telemetry data
+# Corrected synthetic telemetry (10,000 records)
 
-10,000 distinct records split into 9,000 training and 1,000 evaluation records. Each JSON object uses the uploaded schema.
+- `llm_train.jsonl`: 8,000 training records spanning nine pathologies.
+- `llm_validation.jsonl`: 1,000 independent in-distribution validation records spanning all nine training pathologies. Use for early stopping.
+- `llm_eval_ood.jsonl`: 1,000 sign-split-cluster OOD records. Do not use for model selection.
+- `manifest.json`: exact ranges, split counts, label derivation, and limitations.
+- `verify.py`: independent remeasurement of eigen signs and telemetry dimensions.
 
-The activations are constructive, simulated ReLU-like telemetry and the targets and predictions are synthetic. **They are not measured executions of trained networks.** The qualitative descriptions are grounded in observed sparsity, singular-value geometry, controlled input dependence, and output error. Each sample has four text diagnoses. `eigen_signs` is provided for legacy compatibility, not as computed eigenvalue signs.
+The original JSONL record schema is preserved exactly. Pathology assignment is documented in manifest, not added to record schema. Inputs and activations are 4-decimal numeric values. These are **algorithmically generated** examples, not manually authored LLM examples or scientifically validated forward passes.
 
-Dimensions: input 6–32, hidden width 8–48, output 1–8, batch 4–16; one or two hidden layers. Some patterns impose deliberate bottlenecks.
+IMPORTANT: eigen_signs have a precise definition in manifest. Your C++ evaluator must implement the same operation or relabel these records using its OWN eigen-sign definition before training. The previous mismatch could otherwise persist.
 
-Files: `network_train_9000.jsonl`, `network_eval_1000.jsonl`, `manifest.json`.
+Text deliberately avoids unsupported claims of causal attribution; it reports sample correlation. Treat rank and range descriptions as auditable observational statements. Ground truth textual consistency with a domain-specific checker is not guaranteed.

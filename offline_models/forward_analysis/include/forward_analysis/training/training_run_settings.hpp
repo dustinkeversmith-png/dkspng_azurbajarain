@@ -10,8 +10,16 @@ namespace forward_analysis {
 struct TrainingRunSettings {
     // JSONL file the model trained on.
     std::string train_path;
-    // JSONL file of held-out records.
+    // JSONL file of held-out records used for early stopping and checkpoint selection.
     std::string eval_path;
+    // JSONL file evaluated only after training (empty when the run has none).
+    std::string final_eval_path;
+    // Experiment label, e.g. "B" (empty for demo runs).
+    std::string trial;
+    // Free-form description of what the trial changes.
+    std::string trial_description;
+    // True when the training records' observation text was permuted across records (telemetry control).
+    bool shuffled_training_text = false;
     // Seed passed to DualObjectiveDistillationBridge.
     std::uint64_t seed = 20261013ULL;
     // Step 1 epochs (auxiliary losses only, decoder frozen).
@@ -30,6 +38,8 @@ struct TrainingRunSettings {
     double training_seconds = 0.0;
     // Decoder vocabulary size after prepare_vocabulary.
     std::size_t vocabulary_size = 0;
+    // Where decoder training passes ran: the OpenCL device description, or "cpu".
+    std::string decoder_accelerator = "cpu";
 };
 
 }  // namespace forward_analysis

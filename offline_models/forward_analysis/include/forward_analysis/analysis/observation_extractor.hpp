@@ -6,6 +6,9 @@
 #include "forward_analysis/math/statistics_ops.hpp"
 #include "forward_analysis/telemetry/forward_telemetry_tensor.hpp"
 
+#include <Eigen/Eigenvalues>
+#include <Eigen/SVD>
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -27,7 +30,7 @@ struct ObservationExtractor {
             return obs;
         }
         const Eigen::MatrixXd& first_layer = telemetry.layer_activations.front();
-        obs.eigen_signs = eigen_signs(first_layer, config);
+        obs.eigen_signs = eigen_signs(telemetry.inputs, config);
         obs.gating = observe_gating(telemetry, config);
         obs.drivers = observe_drivers(telemetry.inputs, first_layer, config);
         obs.target_related_coordinates = observe_target_related(telemetry, obs, config);
@@ -35,7 +38,42 @@ struct ObservationExtractor {
             obs.outputs.push_back(observe_output(telemetry, obs.gating, k, config));
         }
         obs.outputs_move_in_lockstep = outputs_locked(telemetry.predictions);
+        observe_input_association(telemetry, obs);
+        for (const OutputObservation& o : obs.outputs) {
+            obs.outputs_with_smaller_range += o.range_ratio < config.range_ratio_low ? 1 : 0;
+            obs.outputs_with_larger_range += o.range_ratio > config.range_ratio_high ? 1 : 0;
+            obs.outputs_with_comparable_range +=
+                o.range_ratio >= config.range_ratio_low && o.range_ratio <= config.range_ratio_high ? 1 : 0;
+            obs.sign_agreements += o.sign_agreements;
+        }
+        obs.sign_entries = static_cast<std::size_t>(telemetry.targets.size());
+        obs.narrow_representation = true;
+        for (const LayerObservation& layer : obs.layers) {
+            obs.narrow_representation = obs.narrow_representation && layer.numerical_rank <= config.narrow_rank_limit;
+        }
         return obs;
+    }
+
+    // Ranks the input coordinates by max_k |Pearson(input, final hidden unit k)| (stable, ties by index).
+    static void observe_input_association(const ForwardTelemetryTensor& telemetry, NetworkObservations& obs) {
+        const Eigen::MatrixXd& last = telemetry.layer_activations.back();
+        std::vector<std::pair<double, std::size_t>> scores;
+        for (Eigen::Index c = 0; c < telemetry.inputs.cols(); ++c) {
+            double best = 0.0;
+            for (Eigen::Index k = 0; k < last.cols(); ++k) {
+                best = std::max(best, std::abs(StatisticsOps::pearson(telemetry.inputs.col(c), last.col(k))));
+            }
+            scores.push_back({best, static_cast<std::size_t>(c)});
+        }
+        std::vector<std::pair<double, std::size_t>> descending = scores;
+        std::stable_sort(descending.begin(), descending.end(), [](const auto& l, const auto& r) { return l.first > r.first; });
+        std::vector<std::pair<double, std::size_t>> ascending = scores;
+        std::stable_sort(ascending.begin(), ascending.end(), [](const auto& l, const auto& r) { return l.first < r.first; });
+        for (std::size_t k = 0; k < std::min<std::size_t>(2, scores.size()); ++k) {
+            obs.strongest_inputs.push_back(descending[k].second);
+            obs.weakest_inputs.push_back(ascending[k].second);
+        }
+        obs.strongest_association = descending.empty() ? 0.0 : descending.front().first;
     }
 
     static bool outputs_locked(const Eigen::MatrixXd& predictions) {
@@ -70,6 +108,12 @@ struct ObservationExtractor {
             layer.effective_rank =
                 static_cast<std::size_t>((s.array() >= config.spectral_rank_tolerance * s(0)).count());
         }
+        const Eigen::MatrixXd centered = activations.rowwise() - activations.colwise().mean();
+        layer.numerical_rank = static_cast<std::size_t>(
+            (Eigen::BDCSVD<Eigen::MatrixXd>(centered).singularValues().array() > config.numerical_rank_tolerance).count());
+        for (Eigen::Index i = 0; i < activations.rows(); ++i) {
+            layer.nonpositive_samples += activations.row(i).maxCoeff() <= 0.0 ? 1 : 0;
+        }
 
         const Eigen::VectorXd raw = SpectralOps::uncentered_singular_values(activations);
         const bool non_negative = activations.minCoeff() >= -config.dead_activation_threshold;
@@ -78,13 +122,21 @@ struct ObservationExtractor {
         return layer;
     }
 
-    static Eigen::VectorXd eigen_signs(const Eigen::MatrixXd& first_layer, const DistillerConfig& config) {
+    // Signs of the descending eigenvalues of the zero-diagonal covariance of the first eigen_sign_dim inputs
+    // (zero counts as +1); positions beyond the input width stay +1.
+    static Eigen::VectorXd eigen_signs(const Eigen::MatrixXd& inputs, const DistillerConfig& config) {
         const Eigen::Index dim = static_cast<Eigen::Index>(config.eigen_sign_dim);
-        const SpectralProfile profile =
-            SpectralOps::analyze_activation_manifold(first_layer, std::max<std::size_t>(2, config.eigen_sign_dim));
         Eigen::VectorXd signs = Eigen::VectorXd::Ones(dim);
-        const Eigen::Index copied = std::min(dim, profile.dominant_eigen_signs.size());
-        signs.head(copied) = profile.dominant_eigen_signs.head(copied);
+        const Eigen::Index used = std::min(dim, inputs.cols());
+        if (used == 0 || inputs.rows() == 0) {
+            return signs;
+        }
+        const Eigen::MatrixXd centered = inputs.leftCols(used).rowwise() - inputs.leftCols(used).colwise().mean();
+        Eigen::MatrixXd covariance =
+            centered.transpose() * centered / std::max(1.0, static_cast<double>(inputs.rows() - 1));
+        covariance.diagonal().setZero();
+        const Eigen::VectorXd descending = Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(covariance).eigenvalues().reverse();
+        signs.head(used) = descending.unaryExpr([](double v) { return v >= 0.0 ? 1.0 : -1.0; });
         return signs;
     }
 
@@ -204,7 +256,10 @@ struct ObservationExtractor {
             if (std::abs(t(i)) > 1e-12 && !(t(i) * p(i) > 0.0)) {
                 out.sign_preserved = false;
             }
+            out.sign_agreements += ((t(i) > 0.0) - (t(i) < 0.0)) == ((p(i) > 0.0) - (p(i) < 0.0)) ? 1 : 0;
         }
+        const double target_range = t.size() > 0 ? t.maxCoeff() - t.minCoeff() : 0.0;
+        out.range_ratio = target_range > 1e-12 ? (p.maxCoeff() - p.minCoeff()) / target_range : 1.0;
         out.order_preserved = StatisticsOps::same_order(t, p);
         const double target_mass = t.cwiseAbs().sum();
         out.amplitude_ratio = target_mass > 1e-12 ? p.cwiseAbs().sum() / target_mass : 1.0;

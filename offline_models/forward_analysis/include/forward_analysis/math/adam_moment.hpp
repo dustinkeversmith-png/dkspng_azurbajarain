@@ -29,6 +29,19 @@ public:
         }
     }
 
+    const Eigen::MatrixXd& first() const noexcept { return first_; }
+    const Eigen::MatrixXd& second() const noexcept { return second_; }
+
+    // Replaces both moment estimates, e.g. with the copies a device has been updating.
+    void assign(const Eigen::MatrixXd& first, const Eigen::MatrixXd& second) {
+        first_ = first;
+        second_ = second;
+    }
+
+    static constexpr double beta1() noexcept { return kBeta1; }
+    static constexpr double beta2() noexcept { return kBeta2; }
+    static constexpr double epsilon() noexcept { return kEpsilon; }
+
     // param -= lr * m_hat / (sqrt(v_hat) + eps); step is the 1-based global Adam step count.
     template <typename Param, typename Grad>
     void apply(Param& param, const Grad& grad, double learning_rate, std::uint64_t step) {

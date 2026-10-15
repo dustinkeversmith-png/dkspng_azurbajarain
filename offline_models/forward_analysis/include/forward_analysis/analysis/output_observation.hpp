@@ -23,6 +23,10 @@ struct OutputObservation {
     double open_side_correlation = 0.0;
     // Share of the absolute error that falls on closed samples (0 when nothing is gated).
     double closed_error_share = 0.0;
+    // (max - min) of the prediction over (max - min) of the target; 1 when the target has no range.
+    double range_ratio = 1.0;
+    // Samples on which sign(prediction) equals sign(target), with 0 its own sign.
+    std::size_t sign_agreements = 0;
 };
 
 }  // namespace forward_analysis

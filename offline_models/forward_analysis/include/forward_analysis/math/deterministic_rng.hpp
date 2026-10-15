@@ -16,6 +16,9 @@ struct DeterministicRng {
     explicit DeterministicRng(std::uint64_t seed = 0x9E3779B97F4A7C15ULL) noexcept
         : state(seed == 0 ? 0x9E3779B97F4A7C15ULL : seed) {}
 
+    // Advances the generator as if next_u64() had been called draws times (each call adds one golden increment).
+    void skip(std::uint64_t draws) noexcept { state += draws * 0x9E3779B97F4A7C15ULL; }
+
     std::uint64_t next_u64() noexcept {
         std::uint64_t z = (state += 0x9E3779B97F4A7C15ULL);
         z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;

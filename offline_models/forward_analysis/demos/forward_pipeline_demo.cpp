@@ -10,8 +10,8 @@
 //     -> ObservationConsistency       -> any field contradicting the measured facts is replaced by ObservationNarrator text
 //     -> TrainingRunArtifactWriter    -> artifacts/run_YYYYMMDD_HHMMSS/ with run.json, CSVs and one JSON per record
 //
-// Usage: forward_pipeline_demo [train.jsonl] [eval.jsonl] [artifact_dir]
-//        (defaults: the data/ and artifacts/ folders next to CMakeLists.txt)
+// Usage: forward_pipeline_demo [train.jsonl] [eval.jsonl] [artifact_dir] [pretrain_epochs] [finetune_epochs]
+//        (defaults: the data/ and artifacts/ folders next to CMakeLists.txt, 40 pretrain and 15 finetune epochs)
 
 #include "forward_analysis/forward_analysis.hpp"  // umbrella header: every class in the library
 
@@ -49,11 +49,13 @@ int main(int argc, char** argv) {
 
         // Prints an Eigen vector on one line with 3 digits, e.g. a sign vector as "[1.000, -1.000, 1.000, 1.000]".
         const Eigen::IOFormat row(3, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]");
-        // Step 1 length: passes over the 12 training records with only the auxiliary losses (decoder frozen).
-        const std::size_t pretrain_epochs = 40;
+        // Step 1 length: passes over the training records with only the auxiliary losses (decoder frozen).
+        // Fourth command-line argument, or 40.
+        const std::size_t pretrain_epochs = argc > 4 ? std::stoul(argv[4]) : 40;
         // Step 2 upper bound: passes over the training records with CE + 0.3 Aux1 + 0.2 Aux2 (everything trains).
         // Training stops earlier once held-out token CE has not decreased for config.early_stopping_patience (5) epochs.
-        const std::size_t finetune_epochs = 15;
+        // Fifth command-line argument, or 15.
+        const std::size_t finetune_epochs = argc > 5 ? std::stoul(argv[5]) : 15;
         // SGD step size for the adapter, Perceiver and heads (the decoder uses Adam at config.decoder_learning_rate).
         const double encoder_learning_rate = 0.05;
         // Every double printed from here on shows 3 decimals, e.g. 0.545.
@@ -155,7 +157,8 @@ int main(int argc, char** argv) {
         //  leading drivers/4, strongest driver, outputs keeping sign, keeping order, mean amplitude, mean correlation, flat.
         std::cout << "observation descriptor " << ObservationDescriptor::encode(first.measured).transpose().format(row)
                   << "\n";
-        // Counts training records whose file eigen_signs equal the signs computed from layer 1's covariance.
+        // Counts training records whose file eigen_signs equal the measured signs (descending eigenvalues of the
+        // zero-diagonal covariance of the first four inputs).
         std::size_t sign_matches = 0;
         // Counts ground-truth text fields (12 records x 4 fields = 48) whose claims agree with the measured facts.
         std::size_t ground_truth_consistent_fields = 0;
@@ -221,6 +224,9 @@ int main(int argc, char** argv) {
         bridge.prepare_vocabulary(train);
         // e.g. "vocabulary 1100 tokens" (4 specials <PAD> <BOS> <EOS> <UNK>, words, punctuation and slot tokens).
         std::cout << "\nvocabulary " << bridge.decoder().tokenizer().vocab_size() << " tokens\n";
+        // Where decoder training passes run (config.use_gpu and an OpenCL GPU with double precision), e.g.
+        // "decoder accelerator NVIDIA GeForce RTX 4070 (NVIDIA CUDA, OpenCL 3.0 CUDA)" or "decoder accelerator cpu".
+        std::cout << "decoder accelerator " << bridge.decoder().accelerator() << "\n";
         // The first training field after delexicalization, as the decoder is trained to write it.
         std::cout << "slot-token target " << first.sample_id << ".pathway_activity: "
                   << LexemeSplitter::join(DualObjectiveDistillationBridge::target_lexemes(first, 0)) << "\n";
@@ -371,6 +377,8 @@ int main(int argc, char** argv) {
         // Measured training time and decoder vocabulary size (e.g. 32.0 s, 589 tokens).
         settings.training_seconds = seconds;
         settings.vocabulary_size = bridge.decoder().tokenizer().vocab_size();
+        // OpenCL device description or "cpu".
+        settings.decoder_accelerator = bridge.decoder().accelerator();
         // Writes loss_history.csv (120 rows), samples.csv (16 rows), fields.csv (64 rows) and run.json
         // (settings, config, dataset shape ranges, per-split mean F1 / consistency / eigen-sign accuracy).
         artifacts.finish(settings, config, train, eval);

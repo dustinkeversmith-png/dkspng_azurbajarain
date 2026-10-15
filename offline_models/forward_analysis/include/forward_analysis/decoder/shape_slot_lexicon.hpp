@@ -13,7 +13,9 @@ namespace forward_analysis {
 // Named, measured quantities of one network that slot tokens refer to. Slot names are shared across
 // networks (W_1 is always the first hidden width); the values come from that network's telemetry.
 struct ShapeSlotLexicon {
-    // Scalar sizes and counts, e.g. {"W_1": 24, "DEAD_L1": 5, "N": 8, "D_IN": 16, "CLOSED": 3}.
+    // Scalar sizes and counts, e.g. {"W_1": 24, "DEAD_L1": 5, "N": 8, "D_IN": 16, "CLOSED": 3}, plus the batch
+    // statistics ZERO_Ll, NONPOS_Ll, RANK_Ll, STRONG_k, WEAK_k (input indices), SMALLER_RANGE, LARGER_RANGE,
+    // COMPARABLE_RANGE, SIGN_AGREE and SIGN_ENTRIES.
     std::map<std::string, std::size_t> counts;
     // Index lists, e.g. {"DEAD_L1": [3, 8, 14, 19, 22], "CLOSED": [1, 4, 5]}.
     std::map<std::string, std::vector<std::size_t>> lists;
@@ -52,7 +54,21 @@ struct ShapeSlotLexicon {
             lex.lists["DEAD" + suffix] = layer.dead_units;
             lex.lists["ACTIVE" + suffix] = layer.always_active_units;
             lex.lists["PARTIAL" + suffix] = partial;
+            lex.counts["ZERO" + suffix] = layer.dead_units.size();
+            lex.counts["NONPOS" + suffix] = layer.nonpositive_samples;
+            lex.counts["RANK" + suffix] = layer.numerical_rank;
         }
+        for (std::size_t k = 0; k < obs.strongest_inputs.size(); ++k) {
+            lex.counts["STRONG_" + std::to_string(k + 1)] = obs.strongest_inputs[k];
+        }
+        for (std::size_t k = 0; k < obs.weakest_inputs.size(); ++k) {
+            lex.counts["WEAK_" + std::to_string(k + 1)] = obs.weakest_inputs[k];
+        }
+        lex.counts["SMALLER_RANGE"] = obs.outputs_with_smaller_range;
+        lex.counts["LARGER_RANGE"] = obs.outputs_with_larger_range;
+        lex.counts["COMPARABLE_RANGE"] = obs.outputs_with_comparable_range;
+        lex.counts["SIGN_AGREE"] = obs.sign_agreements;
+        lex.counts["SIGN_ENTRIES"] = obs.sign_entries;
         if (obs.gating.present()) {
             lex.counts["CLOSED"] = obs.gating.closed_samples.size();
             lex.counts["OPEN"] = obs.gating.open_samples.size();

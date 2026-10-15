@@ -23,6 +23,8 @@ struct ObservationJsonWriter {
                                      {"dead_units", layer.dead_units},
                                      {"always_active_units", layer.always_active_units},
                                      {"effective_rank", layer.effective_rank},
+                                     {"numerical_rank", layer.numerical_rank},
+                                     {"nonpositive_samples", layer.nonpositive_samples},
                                      {"lies_on_ray", layer.lies_on_ray}});
         }
         nlohmann::json gating = {{"closed_samples", obs.gating.closed_samples},
@@ -49,10 +51,21 @@ struct ObservationJsonWriter {
                                       {"flat", o.flat},
                                       {"constant_on_closed_samples", o.constant_on_closed_samples},
                                       {"open_side_correlation", o.open_side_correlation},
-                                      {"closed_error_share", o.closed_error_share}});
+                                      {"closed_error_share", o.closed_error_share},
+                                      {"range_ratio", o.range_ratio},
+                                      {"sign_agreements", o.sign_agreements}});
         }
         out["outputs_move_in_lockstep"] = obs.outputs_move_in_lockstep;
         out["eigen_signs"] = std::vector<double>(obs.eigen_signs.data(), obs.eigen_signs.data() + obs.eigen_signs.size());
+        out["strongest_inputs"] = obs.strongest_inputs;
+        out["weakest_inputs"] = obs.weakest_inputs;
+        out["strongest_association"] = obs.strongest_association;
+        out["outputs_with_smaller_range"] = obs.outputs_with_smaller_range;
+        out["outputs_with_larger_range"] = obs.outputs_with_larger_range;
+        out["outputs_with_comparable_range"] = obs.outputs_with_comparable_range;
+        out["sign_agreements"] = obs.sign_agreements;
+        out["sign_entries"] = obs.sign_entries;
+        out["narrow_representation"] = obs.narrow_representation;
         return out;
     }
 

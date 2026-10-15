@@ -1,7 +1,12 @@
 #pragma once
 
+#include "forward_analysis/config/feature_ablation_level.hpp"
+#include "forward_analysis/config/narration_style.hpp"
+#include "forward_analysis/config/slot_binding.hpp"
+
 #include <cstddef>
 #include <stdexcept>
+#include <string>
 
 namespace forward_analysis {
 
@@ -10,7 +15,8 @@ struct DistillerConfig {
     std::size_t d_model = 256;
     // Number of learned Perceiver latent queries (M); the encoder output Z is num_latents x d_model.
     std::size_t num_latents = 8;
-    // How many components of the dominant covariance eigenvector the eigen-sign head predicts.
+    // How many eigenvalue signs the eigen-sign head predicts: signs of the descending eigenvalues of the zero-diagonal
+    // sample covariance of the first eigen_sign_dim input coordinates.
     std::size_t eigen_sign_dim = 4;
     // Width of the decoder's tanh hidden layer between its input vector and the vocabulary logits.
     std::size_t decoder_hidden_dim = 256;
@@ -22,6 +28,10 @@ struct DistillerConfig {
     double decoder_dropout = 0.15;
     // Decoupled weight decay on the decoder's vocabulary projection: W_out -= lr * decay * W_out after every Adam step.
     double decoder_output_weight_decay = 0.1;
+    // Run decoder training passes and evaluation losses on an OpenCL GPU (CLBlast GEMMs + OpenCL C kernels, double
+    // precision) when the library is built with FORWARD_ANALYSIS_WITH_OPENCL and such a GPU is present; otherwise
+    // they run on the CPU with Eigen.
+    bool use_gpu = true;
     // Fine-tuning stops once the held-out token cross-entropy has not decreased for this many consecutive epochs.
     std::size_t early_stopping_patience = 5;
     // Weight of the observation-descriptor regression loss (Aux1) in the total loss.
@@ -38,6 +48,24 @@ struct DistillerConfig {
     double driver_correlation_threshold = 0.75;
     // A prediction whose spread is at most this fraction of its target's spread counts as flat.
     double flat_output_ratio = 0.2;
+    // Singular values of a centered activation matrix above this absolute value count toward its numerical rank.
+    double numerical_rank_tolerance = 1e-3;
+    // A layer whose numerical rank is at most this value is a narrow representation.
+    std::size_t narrow_rank_limit = 2;
+    // Prediction range / target range below this value is a smaller range.
+    double range_ratio_low = 0.8;
+    // Prediction range / target range above this value is a larger range.
+    double range_ratio_high = 1.2;
+    // Narrator for the measured-facts text that replaces unverifiable decoder fields.
+    NarrationStyle narration_style = NarrationStyle::kBatchStatistics;
+    // How numbers in the training text become slot tokens filled from the measured telemetry.
+    SlotBinding slot_binding = SlotBinding::kShapeFacts;
+    // Token and feature representation level fed to the Perceiver encoder (1..5 in the ablation hierarchy).
+    FeatureAblationLevel feature_ablation_level = FeatureAblationLevel::kCompleteArchitecture;
+    // Guide decoder generation using structural and geometric domain head predictions (layer count, narrow vs multidirectional).
+    bool enable_structural_decoder_constraints = true;
+    // Optional real-world application domain metadata (e.g. "finance", "biomechanics"); never alters mathematical diagnostics.
+    std::string application_domain = "";
 
     void validate() const {
         if (d_model == 0) {

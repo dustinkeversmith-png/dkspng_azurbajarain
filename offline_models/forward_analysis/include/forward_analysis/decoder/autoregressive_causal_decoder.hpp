@@ -2,8 +2,11 @@
 
 #include "forward_analysis/analysis/observation_descriptor.hpp"
 #include "forward_analysis/config/distiller_config.hpp"
+#include "forward_analysis/decoder/decoder_device_slot.hpp"
+#include "forward_analysis/decoder/decoder_domain_guidance.hpp"
 #include "forward_analysis/decoder/decoder_parameter_gradients.hpp"
 #include "forward_analysis/decoder/decoder_sequence_cache.hpp"
+#include "forward_analysis/decoder/decoder_tensor_refs.hpp"
 #include "forward_analysis/decoder/observation_tokenizer.hpp"
 #include "forward_analysis/description/observation_text.hpp"
 #include "forward_analysis/encoder/sinusoidal_positional_encoding.hpp"
@@ -30,6 +33,9 @@ namespace forward_analysis {
 //   x_t   = LN(u_t + c_t + W_aux d_hat)
 //   h_t   = drop(tanh(W1 x_t + b1)),  logits = W_out h_t + b_out
 // drop() is inverted dropout, active only in training steps.
+// With config.use_gpu and an OpenCL GPU, training passes and evaluation losses run on the device (parameters and
+// Adam state stay there between passes); generation, attention inspection and copies read host tensors, which are
+// refreshed from the device first.
 class AutoregressiveCausalDecoder {
 public:
     explicit AutoregressiveCausalDecoder(const DistillerConfig& config = DistillerConfig{},
@@ -59,7 +65,7 @@ public:
         for (const std::vector<std::string>& lexemes : field_lexemes) {
             tokenizer_.encode_lexemes(lexemes, config_.max_field_tokens, true);
         }
-        grow_vocabulary();
+        grow_vocabulary_synchronized();
     }
 
     // Eval-mode (no dropout) mean token cross-entropy of one field.
@@ -71,6 +77,10 @@ public:
         if (ids.size() < 2) {
             return 0.0;
         }
+        if (device_.active(config_)) {
+            validate_inputs(field, descriptor);
+            return device_.eval_loss(tensor_refs(), latents_z, descriptor, field, ids);
+        }
         return cross_entropy(forward(latents_z, descriptor, field, ids, nullptr), ids);
     }
 
@@ -80,6 +90,7 @@ public:
                                     std::size_t field,
                                     const std::vector<std::string>& lexemes,
                                     Eigen::MatrixXd& d_latents) const {
+        synchronize_host();
         const std::vector<int> ids = tokenizer_.encode_known_lexemes(lexemes, config_.max_field_tokens);
         d_latents = Eigen::MatrixXd::Zero(latents_z.rows(), latents_z.cols());
         if (ids.size() < 2) {
@@ -95,6 +106,7 @@ public:
                                       const Eigen::VectorXd& descriptor,
                                       std::size_t field,
                                       const std::vector<std::string>& lexemes) const {
+        synchronize_host();
         const std::vector<int> ids = tokenizer_.encode_known_lexemes(lexemes, config_.max_field_tokens);
         return forward(latents_z, descriptor, field, ids, nullptr).attention;
     }
@@ -107,12 +119,34 @@ public:
                                  const std::vector<std::string>& lexemes,
                                  Eigen::MatrixXd& d_latents_accum) {
         const std::vector<int> ids = tokenizer_.encode_lexemes(lexemes, config_.max_field_tokens, true);
-        grow_vocabulary();
+        grow_vocabulary_synchronized();
         if (ids.size() < 2) {
             return 0.0;
         }
+        const bool on_device = device_.active(config_);
         if (frozen_) {
-            return cross_entropy(forward(latents_z, descriptor, field, ids, nullptr), ids);
+            return on_device ? compute_loss(latents_z, descriptor, field, lexemes)
+                             : cross_entropy(forward(latents_z, descriptor, field, ids, nullptr), ids);
+        }
+        if (on_device) {
+            validate_inputs(field, descriptor);
+            // The device draws the three dropout masks from the generator's current state in the order dropout_mask
+            // would (token, second-token, hidden; row by row), so the generator skips ahead by that many draws.
+            const std::uint64_t dropout_state = dropout_rng_.state;
+            if (config_.decoder_dropout > 0.0) {
+                dropout_rng_.skip(static_cast<std::uint64_t>(ids.size() - 1) *
+                                  (2 * config_.d_model + config_.decoder_hidden_dim));
+            }
+            ++adam_step_;
+            Eigen::MatrixXd d_latents;
+            const double loss = device_.train_step(tensor_refs(), latents_z, descriptor, field, ids, dropout_state,
+                                                   config_.decoder_dropout, config_.decoder_learning_rate, adam_step_,
+                                                   config_.decoder_output_weight_decay, d_latents);
+            if (d_latents_accum.rows() != latents_z.rows() || d_latents_accum.cols() != latents_z.cols()) {
+                d_latents_accum = Eigen::MatrixXd::Zero(latents_z.rows(), latents_z.cols());
+            }
+            d_latents_accum += d_latents;
+            return loss;
         }
         const DecoderSequenceCache cache = forward(latents_z, descriptor, field, ids, &dropout_rng_);
         const double loss = cross_entropy(cache, ids);
@@ -145,6 +179,7 @@ public:
                                            const Eigen::VectorXd& descriptor,
                                            std::size_t field,
                                            std::size_t budget) const {
+        synchronize_host();
         const std::size_t cap = std::min(std::max<std::size_t>(2, budget), config_.max_field_tokens);
         const Eigen::MatrixXd keys = latents_z * key_weights_;
         const Eigen::MatrixXd values = latents_z * value_weights_;
@@ -168,6 +203,9 @@ public:
             logits(ObservationTokenizer::kPadToken) = -1e30;
             logits(ObservationTokenizer::kBosToken) = -1e30;
             logits(ObservationTokenizer::kUnkToken) = -1e30;
+            if (config_.enable_structural_decoder_constraints) {
+                DecoderDomainGuidance::apply(field, ids, descriptor, tokenizer_, logits);
+            }
             block_repeated_ngrams(ids, logits);
             Eigen::Index best = 0;
             logits.maxCoeff(&best);
@@ -182,11 +220,73 @@ public:
 
     const ObservationTokenizer& tokenizer() const noexcept { return tokenizer_; }
     ObservationTokenizer& tokenizer() noexcept { return tokenizer_; }
-    const Eigen::MatrixXd& output_weights() const noexcept { return output_weights_; }
+    const Eigen::MatrixXd& output_weights() const {
+        synchronize_host();
+        return output_weights_;
+    }
+
+    // Copies parameters and Adam state back from the device when a device pass changed them (required before the
+    // decoder is copied, e.g. into a checkpoint).
+    void synchronize_host() const { device_.synchronize_host(tensor_refs()); }
+
+    // Where training passes and evaluation losses run, e.g. "NVIDIA GeForce RTX 4070 (NVIDIA CUDA, OpenCL 3.0 ...)"
+    // or "cpu".
+    std::string accelerator() const {
+        device_.active(config_);
+        return device_.description();
+    }
 
 private:
     static constexpr double kEmbeddingScale = 0.5;
     static constexpr double kSecondTokenWeight = 0.5;
+
+    void validate_inputs(std::size_t field, const Eigen::VectorXd& descriptor) const {
+        if (field >= ObservationText::kFieldCount) {
+            throw std::invalid_argument("AutoregressiveCausalDecoder field index out of range");
+        }
+        if (descriptor.size() != static_cast<Eigen::Index>(ObservationDescriptor::dim())) {
+            throw std::invalid_argument("AutoregressiveCausalDecoder descriptor must have ObservationDescriptor::dim() entries");
+        }
+    }
+
+    // Addresses of the host tensors and Adam state (mutable, so const accessors can refresh them from the device).
+    DecoderTensorRefs tensor_refs() const {
+        DecoderTensorRefs refs;
+        refs.token_embeddings = &token_embeddings_;
+        refs.token_moment = &token_moment_;
+        refs.second_token_embeddings = &second_token_embeddings_;
+        refs.token2_moment = &token2_moment_;
+        refs.field_embeddings = &field_embeddings_;
+        refs.field_moment = &field_moment_;
+        refs.positions = &positions_;
+        refs.query_weights = &query_weights_;
+        refs.query_moment = &query_moment_;
+        refs.key_weights = &key_weights_;
+        refs.key_moment = &key_moment_;
+        refs.value_weights = &value_weights_;
+        refs.value_moment = &value_moment_;
+        refs.descriptor_weights = &descriptor_weights_;
+        refs.descriptor_moment = &descriptor_moment_;
+        refs.hidden_weights = &hidden_weights_;
+        refs.hidden_weights_moment = &hidden_weights_moment_;
+        refs.hidden_biases = &hidden_biases_;
+        refs.hidden_biases_moment = &hidden_biases_moment_;
+        refs.output_weights = &output_weights_;
+        refs.output_weights_moment = &output_weights_moment_;
+        refs.output_biases = &output_biases_;
+        refs.output_biases_moment = &output_biases_moment_;
+        return refs;
+    }
+
+    // Adds rows for newly registered tokens, first pulling device-side updates so they are not overwritten.
+    void grow_vocabulary_synchronized() {
+        if (static_cast<Eigen::Index>(tokenizer_.vocab_size()) <= token_embeddings_.rows()) {
+            return;
+        }
+        synchronize_host();
+        grow_vocabulary();
+        device_.mark_host_newer();
+    }
 
     // Forbids any token that would repeat a four-token sequence already emitted in this field.
     static void block_repeated_ngrams(const std::vector<int>& ids, Eigen::VectorXd& logits) {
@@ -251,12 +351,7 @@ private:
                                  std::size_t field,
                                  const std::vector<int>& ids,
                                  DeterministicRng* rng) const {
-        if (field >= ObservationText::kFieldCount) {
-            throw std::invalid_argument("AutoregressiveCausalDecoder field index out of range");
-        }
-        if (descriptor.size() != static_cast<Eigen::Index>(ObservationDescriptor::dim())) {
-            throw std::invalid_argument("AutoregressiveCausalDecoder descriptor must have ObservationDescriptor::dim() entries");
-        }
+        validate_inputs(field, descriptor);
         const Eigen::Index steps = static_cast<Eigen::Index>(ids.size() - 1);
         const Eigen::Index d = static_cast<Eigen::Index>(config_.d_model);
         DecoderSequenceCache cache;
@@ -372,42 +467,46 @@ private:
     std::uint64_t adam_step_ = 0;
     // Lexeme vocabulary shared by all four fields, slot tokens included.
     ObservationTokenizer tokenizer_;
+    // The tensors below are mutable because const accessors refresh them from the device copy when a device pass
+    // has changed them; their logical value is the same on both sides.
     // Embedding of the previous token (vocab x d_model).
-    Eigen::MatrixXd token_embeddings_;
+    mutable Eigen::MatrixXd token_embeddings_;
     // Embedding of the token two steps back (vocab x d_model).
-    Eigen::MatrixXd second_token_embeddings_;
+    mutable Eigen::MatrixXd second_token_embeddings_;
     // One embedding per observation field (4 x d_model), selecting which field is being written.
-    Eigen::MatrixXd field_embeddings_;
+    mutable Eigen::MatrixXd field_embeddings_;
     // Fixed sinusoidal step vectors (max_field_tokens x d_model).
-    Eigen::MatrixXd positions_;
+    mutable Eigen::MatrixXd positions_;
     // Attention query projection W_Q (d_model x d_model).
-    Eigen::MatrixXd query_weights_;
+    mutable Eigen::MatrixXd query_weights_;
     // Attention key projection W_K applied to each latent row (d_model x d_model).
-    Eigen::MatrixXd key_weights_;
+    mutable Eigen::MatrixXd key_weights_;
     // Attention value projection W_V applied to each latent row (d_model x d_model).
-    Eigen::MatrixXd value_weights_;
+    mutable Eigen::MatrixXd value_weights_;
     // Projects the predicted observation descriptor into the step input, W_aux (d_model x 14).
-    Eigen::MatrixXd descriptor_weights_;
+    mutable Eigen::MatrixXd descriptor_weights_;
     // Hidden layer weights (hidden x d_model).
-    Eigen::MatrixXd hidden_weights_;
+    mutable Eigen::MatrixXd hidden_weights_;
     // Hidden layer biases (hidden).
-    Eigen::VectorXd hidden_biases_;
+    mutable Eigen::VectorXd hidden_biases_;
     // Vocabulary logits weights (vocab x hidden).
-    Eigen::MatrixXd output_weights_;
+    mutable Eigen::MatrixXd output_weights_;
     // Vocabulary logit biases (vocab).
-    Eigen::VectorXd output_biases_;
+    mutable Eigen::VectorXd output_biases_;
     // Adam state for each parameter tensor above.
-    AdamMoment token_moment_;
-    AdamMoment token2_moment_;
-    AdamMoment field_moment_;
-    AdamMoment query_moment_;
-    AdamMoment key_moment_;
-    AdamMoment value_moment_;
-    AdamMoment descriptor_moment_;
-    AdamMoment hidden_weights_moment_;
-    AdamMoment hidden_biases_moment_;
-    AdamMoment output_weights_moment_;
-    AdamMoment output_biases_moment_;
+    mutable AdamMoment token_moment_;
+    mutable AdamMoment token2_moment_;
+    mutable AdamMoment field_moment_;
+    mutable AdamMoment query_moment_;
+    mutable AdamMoment key_moment_;
+    mutable AdamMoment value_moment_;
+    mutable AdamMoment descriptor_moment_;
+    mutable AdamMoment hidden_weights_moment_;
+    mutable AdamMoment hidden_biases_moment_;
+    mutable AdamMoment output_weights_moment_;
+    mutable AdamMoment output_biases_moment_;
+    // Device copy of the tensors and Adam state with the step buffers, and which side is newer (empty on the CPU).
+    mutable DecoderDeviceSlot device_;
 };
 
 }  // namespace forward_analysis

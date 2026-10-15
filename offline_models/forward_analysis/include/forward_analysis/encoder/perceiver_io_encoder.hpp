@@ -77,15 +77,32 @@ public:
         const Eigen::MatrixXd d_context = d_pre * w_o_;
 
         b_o_ -= lr * d_pre.colwise().sum().transpose();
-        latent_queries_ -= lr * d_pre;
         w_o_.noalias() -= lr * (d_pre.transpose() * cache.context);
 
         const Eigen::MatrixXd d_values =
             (cache.attn_weights.transpose() * d_context).cwiseMax(-4.0).cwiseMin(4.0);
-        Eigen::MatrixXd d_input = d_values * w_v_;
+        // Attention weight gradient (M x N) from context = attn_weights * values.
+        const Eigen::MatrixXd d_attn = d_context * cache.values.transpose();
+        // Row-wise dot product sum_c(d_attn * attn_weights) for softmax backward.
+        const Eigen::VectorXd row_dot = d_attn.cwiseProduct(cache.attn_weights).rowwise().sum();
+        // Scaled pre-softmax score gradient (M x N).
+        const double scale = 1.0 / std::sqrt(static_cast<double>(config_.d_model));
+        // Softmax Jacobian product scaled by 1 / sqrt(d_model).
+        const Eigen::MatrixXd d_scores =
+            cache.attn_weights.cwiseProduct(d_attn - row_dot.replicate(1, d_attn.cols())) * scale;
+        // Query gradient (M x D).
+        const Eigen::MatrixXd d_queries = (d_scores * cache.keys).cwiseMax(-4.0).cwiseMin(4.0);
+        // Key gradient (N x D).
+        const Eigen::MatrixXd d_keys = (d_scores.transpose() * cache.queries).cwiseMax(-4.0).cwiseMin(4.0);
+
+        latent_queries_ -= lr * (d_pre + d_queries * w_q_);
+        w_q_.noalias() -= lr * (d_queries.transpose() * latent_queries_);
+
+        Eigen::MatrixXd d_input = d_values * w_v_ + d_keys * w_k_;
 
         const double n_scale = lr / static_cast<double>(std::max<Eigen::Index>(1, n));
         w_v_.noalias() -= n_scale * (d_values.transpose() * cache.input_sequence);
+        w_k_.noalias() -= n_scale * (d_keys.transpose() * cache.input_sequence);
         return d_input;
     }
 

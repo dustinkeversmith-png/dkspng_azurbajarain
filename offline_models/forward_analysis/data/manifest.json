@@ -1,40 +1,75 @@
 {
-  "count": 10000,
-  "train_count": 9000,
-  "eval_count": 1000,
-  "input_dim_range": [
+  "version": "corrected-2026-10-14",
+  "seed": 20261014,
+  "schema": "original llm_train.jsonl fields unchanged",
+  "split_counts": {
+    "train": 8000,
+    "validation": 1000,
+    "ood": 1000
+  },
+  "coverage": {
+    "train": {
+      "records": 8000,
+      "pathologies": {
+        "rank_one": 889,
+        "dead_relu": 889,
+        "half_space_clipping": 889,
+        "range_attenuation": 889,
+        "feature_axis_dominance": 889,
+        "two_cluster": 889,
+        "bottleneck": 889,
+        "balanced_projection": 889,
+        "output_bias": 888
+      }
+    },
+    "validation": {
+      "records": 1000,
+      "pathologies": {
+        "rank_one": 112,
+        "dead_relu": 111,
+        "half_space_clipping": 111,
+        "range_attenuation": 111,
+        "feature_axis_dominance": 111,
+        "two_cluster": 111,
+        "bottleneck": 111,
+        "balanced_projection": 111,
+        "output_bias": 111
+      }
+    },
+    "ood": {
+      "records": 1000,
+      "pathologies": {
+        "sign_split_clusters": 1000
+      }
+    }
+  },
+  "input_dimensions": [
     6,
     32
   ],
-  "hidden_width_range": [
+  "hidden_layers": [
+    1,
+    2
+  ],
+  "hidden_width": [
     8,
     48
   ],
-  "output_dim_range": [
+  "output_dimensions": [
     1,
     8
   ],
-  "batch_size_range": [
+  "batch_sizes": [
     4,
     16
   ],
-  "pathologies": {
-    "rank_one": 1000,
-    "dead_corridor": 1000,
-    "halfspace_gate": 1000,
-    "feature_domination": 1000,
-    "range_attenuation": 1000,
-    "balanced_routing": 1000,
-    "two_axis_sheet": 1000,
-    "opposed_relu": 1000,
-    "saturated_readout": 1000,
-    "cluster_collapse": 1000
-  },
-  "schema": "Same top-level telemetry and ground_truth_targets shape as provided llm_train/llm_eval.",
-  "notes": [
-    "Synthetic numbers generated programmatically, not by an LLM and not from actual trained networks.",
-    "Descriptions refer to observed telemetry and known construction rules.",
-    "eigen_signs retained for compatibility, but are categorical synthetic signs, not measured eigenvalues.",
-    "Holdout split is deterministic: every tenth record goes into evaluation."
+  "eigen_sign_definition": "sign of four descending eigenvalues of 4x4 symmetric zero-diagonal sample covariance of the FIRST FOUR input dimensions; centered inputs; covariance divisor max(1,N-1); computed on rounded inputs; zero eigenvalue treated as positive",
+  "caveats": [
+    "Telemetry is programmatically synthesized. Text describes computed observables, not independently human-verified or neural-network-causal explanations.",
+    "Sample-correlation feature descriptions are observational rather than sensitivity/causal estimates.",
+    "Observed numerical matrix rank uses absolute tolerance 1e-3.",
+    "OOD pathology sign_split_clusters appears in OOD set only.",
+    "No hidden weights provided; forward telemetry is constructed rather than verified as a connected trained model.",
+    "Eigen signs definition differs from any prior evaluator unless configured to use this definition."
   ]
 }
