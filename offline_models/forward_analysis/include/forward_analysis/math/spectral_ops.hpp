@@ -30,6 +30,44 @@ struct SpectralOps {
             return profile;
         }
 
+        if (activations.cols() > 64 && activations.cols() > 2 * activations.rows()) {
+            const Eigen::RowVectorXd mean = activations.colwise().mean();
+            const Eigen::MatrixXd centered = activations.rowwise() - mean;
+            const double denom =
+                activations.rows() > 1 ? static_cast<double>(activations.rows() - 1) : 1.0;
+            const Eigen::MatrixXd gram = (centered * centered.transpose()) / denom;
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(gram);
+            const Eigen::VectorXd evals = eig.eigenvalues().reverse().cwiseMax(0.0);
+            const Eigen::MatrixXd evecs = eig.eigenvectors().rowwise().reverse();
+            const Eigen::Index k = std::min<Eigen::Index>(
+                static_cast<Eigen::Index>(max_components), evals.size());
+            profile.singular_values = evals.head(k);
+            profile.principal_axes = Eigen::MatrixXd::Zero(activations.cols(), k);
+            for (Eigen::Index c = 0; c < k; ++c) {
+                const double sigma = std::sqrt(evals(c) * denom);
+                if (sigma > 1e-12) {
+                    profile.principal_axes.col(c) = (centered.transpose() * evecs.col(c)) / sigma;
+                }
+                Eigen::Index max_row = 0;
+                profile.principal_axes.col(c).cwiseAbs().maxCoeff(&max_row);
+                if (profile.principal_axes(max_row, c) < 0.0) {
+                    profile.principal_axes.col(c) *= -1.0;
+                }
+            }
+            if (k > 0) {
+                profile.dominant_eigen_signs = profile.principal_axes.col(0).unaryExpr(
+                    [](double v) { return v >= -1e-9 ? 1.0 : -1.0; });
+            }
+            const Eigen::VectorXd& s = profile.singular_values;
+            if (s.size() >= 2 && s(0) > 1e-9) {
+                const double ratio = s(1) / s(0);
+                profile.eccentricity = std::sqrt(std::max(0.0, 1.0 - ratio * ratio));
+            } else if (s.size() == 1 && s(0) > 1e-9) {
+                profile.eccentricity = 1.0;
+            }
+            return profile;
+        }
+
         const Eigen::MatrixXd cov = covariance(activations);
         Eigen::BDCSVD<Eigen::MatrixXd> svd(cov, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
@@ -86,6 +124,15 @@ struct SpectralOps {
     static Eigen::VectorXd uncentered_singular_values(const Eigen::MatrixXd& activations) {
         if (activations.size() == 0) {
             return Eigen::VectorXd();
+        }
+        if (activations.cols() > 64 && activations.cols() > 2 * activations.rows()) {
+            const Eigen::MatrixXd gram = activations * activations.transpose();
+            const Eigen::VectorXd evals =
+                Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(gram, Eigen::EigenvaluesOnly)
+                    .eigenvalues()
+                    .reverse()
+                    .cwiseMax(0.0);
+            return evals.cwiseSqrt();
         }
         return Eigen::BDCSVD<Eigen::MatrixXd>(activations).singularValues();
     }

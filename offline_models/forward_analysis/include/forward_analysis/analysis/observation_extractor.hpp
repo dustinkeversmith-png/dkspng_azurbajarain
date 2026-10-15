@@ -109,8 +109,19 @@ struct ObservationExtractor {
                 static_cast<std::size_t>((s.array() >= config.spectral_rank_tolerance * s(0)).count());
         }
         const Eigen::MatrixXd centered = activations.rowwise() - activations.colwise().mean();
+        Eigen::VectorXd centered_sv;
+        if (centered.cols() > 64 && centered.cols() > 2 * centered.rows()) {
+            const Eigen::MatrixXd gram = centered * centered.transpose();
+            centered_sv = Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd>(gram, Eigen::EigenvaluesOnly)
+                              .eigenvalues()
+                              .reverse()
+                              .cwiseMax(0.0)
+                              .cwiseSqrt();
+        } else {
+            centered_sv = Eigen::BDCSVD<Eigen::MatrixXd>(centered).singularValues();
+        }
         layer.numerical_rank = static_cast<std::size_t>(
-            (Eigen::BDCSVD<Eigen::MatrixXd>(centered).singularValues().array() > config.numerical_rank_tolerance).count());
+            (centered_sv.array() > config.numerical_rank_tolerance).count());
         for (Eigen::Index i = 0; i < activations.rows(); ++i) {
             layer.nonpositive_samples += activations.row(i).maxCoeff() <= 0.0 ? 1 : 0;
         }

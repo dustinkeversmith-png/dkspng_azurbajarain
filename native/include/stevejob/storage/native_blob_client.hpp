@@ -37,7 +37,7 @@ struct QueryItem {
 
 class NativeBlobClient {
 public:
-    static constexpr std::size_t kMaxBlobBytes = 16384;
+    static constexpr std::size_t kMaxBlobBytes = 128u * 1024u * 1024u;
 
     explicit NativeBlobClient(std::string connection_string = "") {
         account_ = parse_connection(resolve_connection(std::move(connection_string)));
@@ -561,7 +561,7 @@ private:
                 if (!WinHttpQueryDataAvailable(request, &available) || available == 0) {
                     break;
                 }
-                if (payload.size() + available > 1024u * 1024u) {
+                if (payload.size() + available > kMaxBlobBytes) {
                     WinHttpCloseHandle(request);
                     WinHttpCloseHandle(connection);
                     WinHttpCloseHandle(session);

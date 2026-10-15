@@ -69,8 +69,8 @@ public:
                 stevejob::storage::BlobPath::bare(journal_blob, "evals/"),
                 model.journal());
             const double current_loss = model.evaluate_model().primary_loss;
-            return stevejob::compiler::PromptCompiler::compile_slice_prompt(
-                model, slice_id, model.journal(), current_loss, options);
+            return model.compile_prompt(
+                slice_id, model.journal(), current_loss, options);
         });
     }
 
