@@ -86,7 +86,10 @@ endif()
 
 add_native_module(native_engine bindings/bind_processor.cpp)
 add_native_module(tensor_engine bindings/bind_tensor_engine.cpp)
-target_include_directories(tensor_engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../online_models")
+target_include_directories(tensor_engine PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../online_models"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../experiments"
+)
 if(WIN32)
     target_link_libraries(tensor_engine PRIVATE winhttp bcrypt crypt32)
 endif()

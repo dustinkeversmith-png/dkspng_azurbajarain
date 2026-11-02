@@ -37,6 +37,9 @@ MODEL_FACTORIES: dict[str, str] = {
     "BottleneckAutoencoder": "BottleneckAutoencoder",
     "demo_scale": "DemoScaleModel",
     "DemoScaleModel": "DemoScaleModel",
+    "burger_base": "BurgerOnlineModel",
+    "burger_online": "BurgerOnlineModel",
+    "BurgerOnlineModel": "BurgerOnlineModel",
 }
 
 

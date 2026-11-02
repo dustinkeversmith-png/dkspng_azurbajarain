@@ -16,6 +16,8 @@
 #include "stevejob/math/tensor_stats.hpp"
 #include "stevejob/messaging/sjc1_scheme.hpp"
 
+#include "burger/burger_network_comparison.hpp"
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(tensor_engine, module) {
@@ -493,6 +495,87 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("target_blob"),
              py::arg("journal_blob"),
              py::arg("journal_capacity") = 10);
+    py::class_<stevejob::models::BurgerOnlineModel>(module, "BurgerOnlineModel")
+        .def(py::init<>())
+        .def_property(
+            "config",
+            [](const stevejob::models::BurgerOnlineModel& m) { return m.config(); },
+            &stevejob::models::BurgerOnlineModel::set_config)
+        .def("set_config", &stevejob::models::BurgerOnlineModel::set_config, py::arg("config"))
+        .def("compute_layer_stats", &stevejob::models::BurgerOnlineModel::compute_layer_stats, py::arg("matrix"))
+        .def("seed_to_storage",
+             [](stevejob::models::BurgerOnlineModel& model,
+                const std::string& target_blob,
+                const std::string& journal_blob,
+                std::size_t journal_capacity) {
+                 return stevejob::bridge::EngineGateway::seed_model(model, target_blob, journal_blob, journal_capacity);
+             },
+             py::arg("target_blob"),
+             py::arg("journal_blob"),
+             py::arg("journal_capacity") = 8);
+    module.def(
+        "run_burger_baseline",
+        [](int n_train,
+           int n_test,
+           int epochs,
+           double learning_rate,
+           int batch_size,
+           int r_enc,
+           int width,
+           std::uint32_t seed,
+           int patience,
+           double min_delta,
+           bool track_extrap_each_epoch) {
+            std::vector<burger::DataPoint> train;
+            std::vector<burger::DataPoint> test;
+            burger::BurgerDatasetGenerator::generate_splits(train, test, n_train, n_test, r_enc, seed);
+            burger::BurgerBaseNetwork net(r_enc, width, seed);
+            const burger::BenchmarkArtifact artifact = burger::BurgerBenchmarkRunner::run_standard_training(
+                net, train, test, epochs, learning_rate, batch_size, seed + 1u, patience, min_delta,
+                track_extrap_each_epoch);
+            py::dict out;
+            out["experiment_name"] = artifact.experiment_name;
+            out["parameter_count"] = artifact.parameter_count;
+            out["train_mse_initial"] = artifact.train_mse_initial;
+            out["train_mse_final"] = artifact.train_mse_final;
+            out["train_mse_best"] = artifact.train_mse_best;
+            out["extrap_mse_final"] = artifact.extrap_mse_final;
+            out["extrap_mse_at_best"] = artifact.extrap_mse_at_best;
+            out["mean_pde_residual"] = artifact.mean_pde_residual;
+            out["elapsed_wall_seconds"] = artifact.elapsed_wall_seconds;
+            out["mean_epoch_seconds"] = artifact.mean_epoch_seconds;
+            out["epochs_completed"] = artifact.epochs_completed;
+            out["best_epoch"] = artifact.best_epoch;
+            out["converged"] = artifact.converged;
+            out["stop_reason"] = artifact.stop_reason;
+            out["loss_history"] = artifact.loss_history;
+            out["epoch_seconds"] = artifact.epoch_seconds;
+            out["extrap_history"] = artifact.extrap_history;
+            py::list hits;
+            for (const burger::ThresholdHit& hit : artifact.threshold_hits) {
+                py::dict row;
+                row["threshold"] = hit.threshold;
+                row["epoch"] = hit.epoch;
+                row["wall_seconds"] = hit.wall_seconds;
+                hits.append(row);
+            }
+            out["threshold_hits"] = hits;
+            out["json"] = artifact.to_json();
+            out["trajectory_csv"] = artifact.trajectory_csv();
+            return out;
+        },
+        py::arg("n_train") = 2048,
+        py::arg("n_test") = 1024,
+        py::arg("epochs") = 1000,
+        py::arg("learning_rate") = 0.001,
+        py::arg("batch_size") = 64,
+        py::arg("r_enc") = 8,
+        py::arg("width") = 68,
+        py::arg("seed") = 2026,
+        py::arg("patience") = 50,
+        py::arg("min_delta") = 1e-4,
+        py::arg("track_extrap_each_epoch") = true,
+        "Run Adam baseline on the 1D viscous Burgers Cole-Hopf dataset to near-convergence.");
     module.def("read_architecture_meta",
                &stevejob::bridge::EngineGateway::read_meta,
                py::arg("target_blob"),

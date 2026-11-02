@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bottleneck_ae.hpp"
+#include "burger/burger_online_model.hpp"
 #include "demo_scale_model.hpp"
 #include "forward_analyzed_model.hpp"
 #include "mlp_regressor.hpp"
@@ -15,6 +16,10 @@ public:
     static decltype(auto) make(const std::string& kind, Fn&& fn) {
         if (kind == "bottleneck_ae") {
             BottleneckAutoencoder model;
+            return std::forward<Fn>(fn)(model);
+        }
+        if (kind == "burger_base" || kind == "burger_online") {
+            BurgerOnlineModel model;
             return std::forward<Fn>(fn)(model);
         }
         if (kind == "demo_scale") {

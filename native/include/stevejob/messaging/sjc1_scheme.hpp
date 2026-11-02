@@ -43,8 +43,11 @@ public:
         if (body.size() > 0xffffffffu) {
             throw std::invalid_argument("SJC1 body exceeds 4 GiB");
         }
+        // RLE is value-dependent and can emit undecodable streams for large float64
+        // weight matrices (observed on ~10K-parameter Burgers MLPs). Prefer the raw
+        // body whenever the payload is larger than the original tiny-demo regime.
         const std::string encoded = rle_encode(body);
-        const bool compressed = encoded.size() < body.size();
+        const bool compressed = encoded.size() < body.size() && body.size() <= 4096;
         const std::string& payload = compressed ? encoded : body;
         const std::uint64_t checksum = stevejob::core::fnv1a64_bytes(
             reinterpret_cast<const unsigned char*>(body.data()), body.size());
