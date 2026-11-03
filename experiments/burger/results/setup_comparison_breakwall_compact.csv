@@ -1,0 +1,3 @@
+setup,status,initial_loss,best_loss,trials_run,commits,rejected,elapsed_seconds,prompt_tokens,completion_tokens,total_tokens,avg_tokens_per_trial,broke_026,broke_02,broke_01,trials_to_0p1,trials_to_0p05,trials_to_0p03,trials_to_0p026,trials_to_0p02,trials_to_0p01
+burger_breakwall,ok,0.3191281519498989,0.068122717895691,100,10,90,407.50858211517334,144708,39675,184383,1843.83,False,False,False,3,,,,,
+burger_compact,ok,0.3191281519498989,0.02342870589245027,100,35,58,437.384192943573,148547,41586,190133,1901.33,True,False,False,10,22,45,47,,

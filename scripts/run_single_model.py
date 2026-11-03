@@ -40,6 +40,15 @@ MODEL_FACTORIES: dict[str, str] = {
     "burger_base": "BurgerOnlineModel",
     "burger_online": "BurgerOnlineModel",
     "BurgerOnlineModel": "BurgerOnlineModel",
+    "burger_breakwall": "make_burger_breakwall",
+    "burger_compact": "make_burger_compact",
+}
+
+BURGER_PROFILE_MODELS = {
+    "burger_breakwall": "burger_breakwall",
+    "burger_compact": "burger_compact",
+    "make_burger_breakwall": "burger_breakwall",
+    "make_burger_compact": "burger_compact",
 }
 
 
@@ -64,8 +73,11 @@ def _load_settings() -> None:
 
 def _resolve_factory(model_arg: str) -> tuple[str, Any]:
     factory_name = MODEL_FACTORIES.get(model_arg, model_arg)
+    if model_arg in BURGER_PROFILE_MODELS or factory_name in BURGER_PROFILE_MODELS:
+        profile = BURGER_PROFILE_MODELS.get(model_arg) or BURGER_PROFILE_MODELS.get(factory_name)
+        return profile or model_arg, lambda: tensor_engine.make_burger_model(profile or model_arg)
     if not hasattr(tensor_engine, factory_name):
-        available = sorted(set(MODEL_FACTORIES.values()))
+        available = sorted(set(MODEL_FACTORIES.values()) | set(BURGER_PROFILE_MODELS))
         raise SystemExit(f"Unknown model '{model_arg}'. Available models: {', '.join(available)}")
     return factory_name, getattr(tensor_engine, factory_name)
 

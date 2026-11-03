@@ -19,7 +19,15 @@ public:
             return std::forward<Fn>(fn)(model);
         }
         if (kind == "burger_base" || kind == "burger_online") {
-            BurgerOnlineModel model;
+            BurgerOnlineModel model(BurgerOnlineModel::Profile::Base);
+            return std::forward<Fn>(fn)(model);
+        }
+        if (kind == "burger_breakwall") {
+            BurgerOnlineModel model(BurgerOnlineModel::Profile::Breakwall);
+            return std::forward<Fn>(fn)(model);
+        }
+        if (kind == "burger_compact") {
+            BurgerOnlineModel model(BurgerOnlineModel::Profile::Compact);
             return std::forward<Fn>(fn)(model);
         }
         if (kind == "demo_scale") {

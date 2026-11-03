@@ -495,8 +495,13 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("target_blob"),
              py::arg("journal_blob"),
              py::arg("journal_capacity") = 10);
+    py::enum_<stevejob::models::BurgerOnlineModel::Profile>(module, "BurgerProfile")
+        .value("Base", stevejob::models::BurgerOnlineModel::Profile::Base)
+        .value("Breakwall", stevejob::models::BurgerOnlineModel::Profile::Breakwall)
+        .value("Compact", stevejob::models::BurgerOnlineModel::Profile::Compact);
     py::class_<stevejob::models::BurgerOnlineModel>(module, "BurgerOnlineModel")
         .def(py::init<>())
+        .def(py::init<stevejob::models::BurgerOnlineModel::Profile>(), py::arg("profile"))
         .def_property(
             "config",
             [](const stevejob::models::BurgerOnlineModel& m) { return m.config(); },
@@ -513,6 +518,20 @@ PYBIND11_MODULE(tensor_engine, module) {
              py::arg("target_blob"),
              py::arg("journal_blob"),
              py::arg("journal_capacity") = 8);
+    module.def(
+        "make_burger_model",
+        [](const std::string& profile) {
+            using Profile = stevejob::models::BurgerOnlineModel::Profile;
+            Profile p = Profile::Base;
+            if (profile == "burger_breakwall" || profile == "breakwall") {
+                p = Profile::Breakwall;
+            } else if (profile == "burger_compact" || profile == "compact") {
+                p = Profile::Compact;
+            }
+            return stevejob::models::BurgerOnlineModel(p);
+        },
+        py::arg("profile") = "burger_base",
+        "Construct a Burgers online model profile (burger_base|burger_breakwall|burger_compact).");
     module.def(
         "run_burger_baseline",
         [](int n_train,

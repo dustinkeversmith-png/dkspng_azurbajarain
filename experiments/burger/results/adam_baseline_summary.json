@@ -1,0 +1,52 @@
+{
+  "parameter_count": 10065,
+  "train_mse_initial": 0.8539176709335636,
+  "train_mse_final": 0.009565312934015097,
+  "train_mse_best": 0.009565312934015097,
+  "extrap_mse_final": 108.44880686353278,
+  "extrap_mse_at_best": 108.44880686353278,
+  "mean_pde_residual": 7.446117907119958,
+  "elapsed_wall_seconds": 14.3046762,
+  "mean_epoch_seconds": 0.04520123804878052,
+  "epochs_completed": 205,
+  "best_epoch": 205,
+  "converged": true,
+  "stop_reason": "reached_train_mse_0.01",
+  "threshold_hits": [
+    {
+      "threshold": 1.0,
+      "epoch": 1,
+      "wall_seconds": 0.0444122
+    },
+    {
+      "threshold": 0.5,
+      "epoch": 29,
+      "wall_seconds": 1.9917202
+    },
+    {
+      "threshold": 0.25,
+      "epoch": 42,
+      "wall_seconds": 2.8795485
+    },
+    {
+      "threshold": 0.1,
+      "epoch": 60,
+      "wall_seconds": 4.1663014
+    },
+    {
+      "threshold": 0.05,
+      "epoch": 74,
+      "wall_seconds": 5.1771898
+    },
+    {
+      "threshold": 0.02,
+      "epoch": 151,
+      "wall_seconds": 10.5446243
+    },
+    {
+      "threshold": 0.01,
+      "epoch": 205,
+      "wall_seconds": 14.2767661
+    }
+  ]
+}
